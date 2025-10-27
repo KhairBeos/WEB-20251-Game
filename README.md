@@ -5,8 +5,8 @@ Tank.io - Game tank bắn nhau pvp online nhiều người với các cơ chế 
 
 | Thành phần | Công nghệ               | Vai trò                         |
 | ---------- | ----------------------- | ------------------------------- |
-| **Client** | HTML Canvas + JS        | Hiển thị game, gửi input        |
-| **Server** | Node.js + Socket.IO     | Quản lý state, sync real-time   |
+| **Client** | HTML Canvas + Nextjs        | Hiển thị game, gửi input        |
+| **Server** | NestJs + Socket.IO     | Quản lý state, sync real-time   |
 | **Assets** | PNG/SVG tank & bullet   | Vẽ giao diện đẹp                |
 | **Logic**  | JS (cả client & server) | Tính toán vị trí, va chạm, điểm |
 

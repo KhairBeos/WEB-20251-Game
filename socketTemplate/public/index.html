@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Tank.IO</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    canvas {
+      background: #222;
+      display: block;
+      margin: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="game" width="800" height="600"></canvas>
+
+  <script>
+    const socket = io();
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    let id, players = {}, bullets = [];
+    let keys = {};
+    document.addEventListener("keydown", e => keys[e.key] = true);
+    document.addEventListener("keyup", e => keys[e.key] = false);
+
+    let mx = 0, my = 0;
+    canvas.addEventListener("mousemove", e => {
+      mx = e.offsetX; my = e.offsetY;
+    });
+    canvas.addEventListener("mousedown", e => {
+      const angle = Math.atan2(my - canvas.height / 2, mx - canvas.width / 2);
+      socket.emit("shoot", { angle });
+    });
+
+    socket.on("init", (data) => {
+      id = data.id; players = data.players; bullets = data.bullets;
+    });
+    socket.on("state", (data) => {
+      players = data.players; bullets = data.bullets;
+    });
+    socket.on("newPlayer", (p) => players[p.id] = p);
+    socket.on("removePlayer", (pid) => delete players[pid]);
+
+    let x = 1000, y = 1000, angle = 0;
+
+    function update() {
+      if (keys["w"]) y -= 3;
+      if (keys["s"]) y += 3;
+      if (keys["a"]) x -= 3;
+      if (keys["d"]) x += 3;
+      const turret = Math.atan2(my - canvas.height / 2, mx - canvas.width / 2);
+      socket.emit("updatePlayer", { x, y, angle, turret });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      update();
+      for (const pid in players) {
+        const p = players[pid];
+        const px = p.x - x + 400, py = p.y - y + 300;
+        ctx.save();
+        ctx.translate(px, py);
+        ctx.rotate(p.angle);
+        ctx.fillStyle = pid === id ? "lime" : "gray";
+        ctx.fillRect(-15, -10, 30, 20);
+        ctx.rotate(p.turret - p.angle);
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, -3, 20, 6);
+        ctx.restore();
+      }
+      ctx.fillStyle = "yellow";
+      bullets.forEach(b => {
+        ctx.beginPath();
+        ctx.arc(b.x - x + 400, b.y - y + 300, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    }
+    draw();
+  </script>
+</body>
+
+</html>
