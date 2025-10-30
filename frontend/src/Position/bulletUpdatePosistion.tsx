@@ -17,7 +17,6 @@ export const bulletUpdatePosistion = (
   keysPressed: RefObject<KeyMap>
 ) => {
   const updatePosition = () => {
-    console.log("Bullet size now:",bullets.current.length)
 
     bullets.current = bullets.current.map((bullet) => {
         const angleRad = bullet.degree * (Math.PI / 180);
