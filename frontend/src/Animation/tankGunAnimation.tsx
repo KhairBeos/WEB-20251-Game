@@ -2,24 +2,38 @@ import { RefObject, useCallback } from "react";
 import { KeyMap } from "../Model/KeyMap";
 import { Tank } from "../Model/Tank";
 import { ANIMATION_SPEED } from "../GlobalSetting";
+import { TankGun } from "../Model/TankGun";
 
 export const tankGunAnimation = (
   ctx: CanvasRenderingContext2D,
-  tank: RefObject<Tank>,
+  tank: RefObject<TankGun>,
   keysPressed: RefObject<KeyMap>,
-  frames: RefObject<HTMLImageElement[]>
+  frames: RefObject<HTMLImageElement[]>,
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
-  const updateAnimation = (isShooting: boolean) => {
+  const updateAnimation = () => {
     const p = tank.current;
+    const keys = keysPressed.current;
+    if(keys["j"] && !p.isShooting) {
+      console.log("Start Shotting")
+      p.isShooting = true, p.lastShoot = Date.now() 
+    }
 
     // Nếu nhân vật đang di chuyển, cập nhật hoạt ảnh
-    if (isShooting) {
+    if (p.isShooting) {
       p.frameCounter++;
       if (p.frameCounter >= ANIMATION_SPEED) {
         p.frameCounter = 0;
         // Chuyển sang khung hình tiếp theo, nếu là khung cuối thì quay lại khung đầu (0)
-        p.frameIndex = (p.frameIndex + 1) % 2;
+        //console.log(p.frameIndex, frames.current.length-1, p.frameIndex == frames.current.length-1)
+       
+
+        
+        if(p.frameIndex == frames.current.length-1) {
+          p.isShooting = false
+          console.log("Stop shotting")
+        }
+        p.frameIndex = (p.frameIndex + 1) % frames.current.length;
       }
     } else {
       p.frameCounter = 0;
@@ -41,6 +55,10 @@ export const tankGunAnimation = (
 
     // Lấy đối tượng Image tương ứng với khung hình hiện tại
     const img = frames.current[p.frameIndex];
+    if(!img) {
+      ctx.restore()
+      return 
+    }
 
     // Vị trí vẽ trên Canvas (đích đến)
     const destX = - p.width / 2; // Căn giữa
@@ -54,6 +72,5 @@ export const tankGunAnimation = (
     ctx.restore()
   };
 
-  const keys = keysPressed.current;
-  updateAnimation(false);
+  updateAnimation();
 };

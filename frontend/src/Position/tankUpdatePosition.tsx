@@ -7,13 +7,16 @@ import {
 } from "../GlobalSetting";
 import { KeyMap } from "../Model/KeyMap";
 import { Tank } from "../Model/Tank";
+import { TankGun } from "../Model/TankGun";
 
 export const tankUpdatePosistion = (
   tank: RefObject<Tank>,
+  tankGun: RefObject<TankGun>,
   keysPressed: RefObject<KeyMap>
 ) => {
   const updatePosition = () => {
     const p = tank.current;
+    const gun = tankGun.current;
     const keys = keysPressed.current;
     //console.log("posx:"+p.x+","+"posy:"+p.y)
 
@@ -66,10 +69,17 @@ export const tankUpdatePosistion = (
     newX += deltaX;
     newY += deltaY;
 
-    // 1. Áp dụng vị trí mới
+    // 1. Áp dụng vị trí mới cho Tank
     p.x = newX;
     p.y = newY;
     p.degree = newDegree;
+
+
+    // 1. Áp dụng vị trí mới cho Tank Gun
+
+    gun.x = newX
+    gun.y = newY
+    gun.degree = newDegree
 
     // 2. Xử lý giới hạn khung hình (Clamping)
 

@@ -46,6 +46,10 @@ export const tankMovingAnimation = (
 
     // Lấy đối tượng Image tương ứng với khung hình hiện tại
     const img = frames.current[p.frameIndex];
+    if(!img) {
+      ctx.restore()
+      return 
+    }
 
     // Vị trí vẽ trên Canvas (đích đến)
     const destX = -p.width / 2; // Căn giữa

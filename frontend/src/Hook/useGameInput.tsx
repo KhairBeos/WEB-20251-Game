@@ -16,7 +16,7 @@ export const useGameInput = () => {
     // 2. Tạo hàm xử lý keydown ổn định
     const handleKeyDown = useCallback((event: KeyboardEvent) => {
         const key = event.key.toLowerCase();
-        if (['a', 'w', 's', 'd'].includes(key)) {
+        if (['a', 'w', 's', 'd','j'].includes(key)) {
             // Ngăn chặn hành vi mặc định của trình duyệt (cuộn trang)
             event.preventDefault(); 
             keysPressed.current[key] = true;
@@ -26,7 +26,7 @@ export const useGameInput = () => {
     // 3. Tạo hàm xử lý keyup ổn định
     const handleKeyUp = useCallback((event: KeyboardEvent) => {
         const key = event.key.toLowerCase();
-        if (['a', 'w', 's', 'd'].includes(key)) {
+        if (['a', 'w', 's', 'd','j'].includes(key)) {
             keysPressed.current[key] = false;
         }
     }, []); // Dependency rỗng: Hàm này ổn định suốt vòng đời component
