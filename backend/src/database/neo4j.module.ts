@@ -1,1 +1,0 @@
-/* Nguyen An Khang */

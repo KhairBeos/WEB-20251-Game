@@ -7,7 +7,6 @@ import {
   COOLDOWN_MS,
 } from "../GlobalSetting";
 import { KeyMap } from "../Model/KeyMap";
-import { Tank } from "../Model/Tank";
 import { TankGun } from "../Model/TankGun";
 import { Bullet } from "../Model/Bullet";
 import { TankBullet } from "../Model/TankBullet";
