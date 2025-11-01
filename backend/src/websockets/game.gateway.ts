@@ -9,8 +9,8 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Socket, Server } from 'socket.io';
-import { GameService } from './game.service';
-import { OnModuleInit } from '@nestjs/common';
+import * as gameService from './game.service';
+import { Logger, OnModuleInit } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: { origin: '*' },
@@ -20,7 +20,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly gameService: GameService) {}
+  constructor(private readonly gameService: gameService.GameService) {}
 
   onModuleInit() {
     // Cung cấp instance của Socket.io Server cho Game Service
@@ -43,9 +43,13 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
   // Lắng nghe input di chuyển từ Client
   // Dữ liệu client gửi lên: socket.emit('playerInput', { direction: 'right' });
-  @SubscribeMessage('playerInput')
-  handleMove(@MessageBody() data: { direction: string }, @ConnectedSocket() client: Socket): void {
+  @SubscribeMessage('tankInput')
+  handleMove(@MessageBody() tankInput: gameService.TankInput, @ConnectedSocket() client: Socket): void {
     // Chuyển input đến Game Service để xử lý trong vòng lặp game
-    this.gameService.handlePlayerInput(client.id, data.direction);
+    //console.log(`Received input from ${client.id}:`, tankInput);
+     console.log("received input")
+    this.gameService.handleTankInput(client.id, tankInput);
   }
+
+ 
 }
