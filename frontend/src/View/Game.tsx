@@ -35,7 +35,6 @@ function Game() {
   const gameStateRef = useRef<GameState>({});
   const { socket, isConnected } = useSocket();
 
-
   useEffect(() => {
       // Đảm bảo socket tồn tại và được kết nối trước khi lắng nghe
       if (socket && isConnected) {
@@ -66,8 +65,6 @@ function Game() {
   const {imageRef:tankGunImageRef,isImageLoaded:isGunImageLoaded} =  useLoadTankGun()
   const {imageRef:lazeImageRef,isImageLoaded:isLazeImageLoaded} =  useLoadLazeBullet()
   const {imageRef:bulletImageRef,isImageLoaded:isBulletImageLoaded} =  useLoadTankBullet()
-
-
 
   const bulletsRef = useRef<Bullet[]>([]);
   // Ref để theo dõi trạng thái các phím W A S D đang được nhấn
@@ -149,6 +146,8 @@ function Game() {
     socket: Socket|null
   ) => tankUpdatePosistion(tank,tankGun,keysPressed,socket),[])
 
+  
+
   const bulletUpdatePosistionCB = useCallback((
     bullets : RefObject<Bullet[]>,
     keysPressed: RefObject<KeyMap>,
@@ -183,7 +182,6 @@ function Game() {
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
     // Cap nhat tank theo 
-
 
     //spawnBullet(bulletsRef,tankGun,keysPressed)
 

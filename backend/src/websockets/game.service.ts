@@ -125,7 +125,7 @@ export class GameService implements OnModuleInit {
       let newY = player.y;
       let isMoving = false;
 
-      console.log("input size:",playerInput.length)
+
       for (const input of playerInput) {
        
         // Xử lý quay xe tăng
