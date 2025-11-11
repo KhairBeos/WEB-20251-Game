@@ -10,6 +10,15 @@ export type TankGun = {
     lastShoot: number,
 }
 
+export interface TankGunAnimationState {
+    [playerId: string]: {
+        frameIndex: number,
+        frameCounter: number,
+        isFiring: boolean
+        
+    }
+}
+
 // interface PlayerState {
 //   x: number;
 //   y: number;

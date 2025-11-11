@@ -1,24 +1,22 @@
 "use client";
-import { useRef, useEffect, useCallback, useState, RefObject } from "react";
-import { GameState, Tank, TankAnimationState, TankState } from "../Model/Tank";
-import { KeyMap } from "../Model/KeyMap";
-import { assert } from "console";
-import useLoadTankBody from "../Hook/useLoadTankBody";
-import { useGameInput } from "../Hook/useGameInput";
-import { tankMovingAnimation } from "../Animation/tankMovingAnimation";
-import { tankUpdatePosistion } from "../Position/tankUpdatePosition";
-import useLoadTankGun from "../Hook/useLoadTankGun";
-import { tankGunAnimation } from "../Animation/tankGunAnimation";
-import { TankGun } from "../Model/TankGun";
-import useLoadLazeBullet from "../Hook/useLoadLazeBullet";
-import useLoadTankBullet from "../Hook/useLoadTankBullet";
-import { bulletUpdatePosistion } from "../Position/bulletUpdatePosistion";
-import { spawnBullet } from "../Spawn/spawnBullet";
+import { RefObject, useCallback, useEffect, useRef } from "react";
 import { tankBulletAnimation } from "../Animation/tankBulletAnimation";
-import { Bullet } from "../Model/Bullet";
-import { LazeBullet } from "../Model/LazeBullet";
-import { useSocket } from "../Hook/useSocket";
+import { tankGunAnimation } from "../Animation/tankGunAnimation";
+import { tankMovingAnimation } from "../Animation/tankMovingAnimation";
+import { useGameInput } from "../Hook/useGameInput";
+import useLoadLazeBullet from "../Hook/useLoadLazeBullet";
+import useLoadTankBody from "../Hook/useLoadTankBody";
+import useLoadTankBullet from "../Hook/useLoadTankBullet";
+import useLoadTankGun from "../Hook/useLoadTankGun";
+import { Bullet, BulletAnimationState, BulletState } from "../Model/Bullet";
+import { KeyMap } from "../Model/KeyMap";
+import { TankAnimationState, TankState } from "../Model/Tank";
+import { TankGun, TankGunAnimationState } from "../Model/TankGun";
+import { tankUpdatePosistion } from "../Position/tankUpdatePosition";
+
+
 import { Socket } from "socket.io-client";
+import { useSocket } from "../Hook/useSocket";
 
 
 // Kích thước cố định của Canvas
@@ -32,20 +30,40 @@ const ANIMATION_SPEED = 10; // Chuyển khung hình sau mỗi X frame game (Tố
 const PLAYER_SPEED = 5;
 
 function Game() {
-  const gameStateRef = useRef<GameState>({});
+
+  // Ref để lưu trữ trạng thái tanks nhận được từ server
+  const tankStateRef = useRef<TankState>({
+    serverTimestamp: 0,
+    tankStates: {}
+  });
+
+  // Ref để lưu trữ trạng thái bullets nhận được từ server
+  const bulletStateRef = useRef<BulletState>({
+    serverTimestamp: 0,
+    bulletStates: {}
+  });
+
   const { socket, isConnected } = useSocket();
 
   useEffect(() => {
       // Đảm bảo socket tồn tại và được kết nối trước khi lắng nghe
       if (socket && isConnected) {
-        // 1. Lắng nghe sự kiện từ Server
-        socket.on('gameState', (state) => {
+        // 1. Lắng nghe sự kiện tankState từ Server
+        socket.on('tankState', (state) => {
           // Cập nhật trạng thái game nhận được từ server
           //console.log('Received Game State:', state);
-          gameStateRef.current = state;
+          tankStateRef.current = state;
           //console.log('Received Game State:', gameStateRef.current);
         });
-  
+
+         // 1. Lắng nghe sự kiện bulletState từ Server
+        socket.on('bulletState', (state) => {
+          // Cập nhật trạng thái game nhận được từ server
+          //console.log('Received Game State:', state);
+          bulletStateRef.current = state;
+          //console.log('Received Game State:', gameStateRef.current);
+        });
+
         // CLEANUP: Tắt lắng nghe khi component bị hủy
         return () => {
           socket.off('gameState');
@@ -70,94 +88,43 @@ function Game() {
   // Ref để theo dõi trạng thái các phím W A S D đang được nhấn
   const keysPressed = useGameInput()
 
-  // Ref để lưu trữ trạng thái hoạt ảnh của tank
+  // Ref để lưu trữ trạng thái hoạt ảnh di chuyen của tank
   const tankAnimationState = useRef<TankAnimationState>({})
-  
-  // Cấu hình vật thể (quả bóng)
-  const tank = useRef<Tank>({
-    x: CANVAS_WIDTH / 2, // Vị trí ban đầu X (giữa)
-    y: CANVAS_HEIGHT / 2, // Vị trí ban đầu Y (giữa)
-    width: FRAME_WIDTH,
-    height: FRAME_HEIGHT,
-    frameIndex: 0, // Khung hình hoạt ảnh hiện tại
-    frameCounter: 0, // Bộ đếm để điều chỉnh tốc độ hoạt ảnh
-    // Thêm thuộc tính góc quay (degree)
-    degree: Math.floor(Math.random() * 360), // Khởi tạo ngẫu nhiên từ 0 đến 359 độ
-  });
+  // Ref để lưu trữ trạng thái hoạt ảnh bắn của tank
+  const tankGunAnimationState = useRef<TankGunAnimationState>({})
+  // Ref để lưu trữ trạng thái hoạt ảnh đạn
+  const bulletAnimationState = useRef<BulletAnimationState>({})
 
-
-  // Cấu hình vật thể (quả bóng)
-  const tankGun = useRef<TankGun>({
-    x: CANVAS_WIDTH / 2, // Vị trí ban đầu X (giữa)
-    y: CANVAS_HEIGHT / 2, // Vị trí ban đầu Y (giữa)
-    
-    width: FRAME_WIDTH,
-    height: FRAME_HEIGHT,
-    frameIndex: 0, // Khung hình hoạt ảnh hiện tại
-    frameCounter: 0, // Bộ đếm để điều chỉnh tốc độ hoạt ảnh
-
-    // Thêm thuộc tính góc quay (degree)
-    degree: tank.current.degree, // Khởi tạo ngẫu nhiên từ 0 đến 359 độ
-    isShooting: false,
-    lastShoot: 0,
-  });
-
-  const lazeBullet = useRef<LazeBullet>(
-    {
-      x: CANVAS_WIDTH / 2, // Vị trí ban đầu X (giữa)
-      y: CANVAS_HEIGHT / 2, // Vị trí ban đầu Y (giữa)
-      
-      width: FRAME_WIDTH,
-      height: FRAME_HEIGHT,
-      frameIndex: 0, // Khung hình hoạt ảnh hiện tại
-      frameCounter: 0, // Bộ đếm để điều chỉnh tốc độ hoạt ảnh
-
-      // Thêm thuộc tính góc quay (degree)
-      degree: tank.current.degree, // Khởi tạo ngẫu nhiên từ 0 đến 359 độ
-    }
-  )
-
-  
-  const tankGunAnitionCV = useCallback((
-    ctx: CanvasRenderingContext2D,
-    tankGun: RefObject<TankGun>,
-    keysPressed: RefObject<KeyMap>,
-    frames: RefObject<HTMLImageElement[]>,
-
-  ) => tankGunAnimation(ctx,tankGun,keysPressed,frames),[isGunImageLoaded])
-
+  // Animation cho tank di chuyen
   const tankMovingAnimationCB = useCallback((
     ctx: CanvasRenderingContext2D,
-    gameState: RefObject<GameState>,
+    tankState: RefObject<TankState>,
     tankAnimationState: RefObject<TankAnimationState>,
-    frames: RefObject<HTMLImageElement[]>
-  ) => tankMovingAnimation(ctx,gameState,tankAnimationState,frames),[isImageLoaded])
+    keysPressed: RefObject<KeyMap>,
+    frames: RefObject<HTMLImageElement[]>,
+  ) => tankMovingAnimation(ctx,tankState,tankAnimationState,keysPressed,frames),[isImageLoaded])
 
+  // Animation cho tank gun
+  const tankGunAnimationCB = useCallback((
+    ctx: CanvasRenderingContext2D,
+    tankState: RefObject<TankState>,
+    tankGunAnimationState: RefObject<TankGunAnimationState>,
+    keysPressed: RefObject<KeyMap>,
+    frames: RefObject<HTMLImageElement[]>,
+  ) => tankGunAnimation(ctx,tankState,tankGunAnimationState,keysPressed,frames),[isGunImageLoaded])
+
+  // Animation cho đạn
   const tankBulletAnimationCB = useCallback((
     ctx: CanvasRenderingContext2D,
-    bullets: RefObject<Bullet[]>,
+    bulletState: RefObject<BulletState>,
+    bulletAnimationState: RefObject<BulletAnimationState>,
     frames: RefObject<HTMLImageElement[]>
-  ) => tankBulletAnimation(ctx,bullets,frames),[isBulletImageLoaded])
+  ) => tankBulletAnimation(ctx,bulletState,bulletAnimationState,frames),[isBulletImageLoaded])
 
   const tankUpdatePosistionCB = useCallback((
-    tank: RefObject<Tank>,
-     tankGun: RefObject<TankGun>,
     keysPressed: RefObject<KeyMap>,
     socket: Socket|null
-  ) => tankUpdatePosistion(tank,tankGun,keysPressed,socket),[])
-
-  
-
-  const bulletUpdatePosistionCB = useCallback((
-    bullets : RefObject<Bullet[]>,
-    keysPressed: RefObject<KeyMap>,
-  ) => bulletUpdatePosistion(bullets,keysPressed),[])
-
-  const spawnBulletCB = useCallback((
-    bullets : RefObject<Bullet[]>,
-  tankGun: RefObject<TankGun>,
-    keysPressed: RefObject<KeyMap>
-  ) => spawnBullet(bullets,tankGun,keysPressed),[])
+  ) => tankUpdatePosistion(keysPressed,socket),[])
 
   // Vòng lặp hoạt ảnh chính
   const animate = useCallback(() => {
@@ -185,12 +152,12 @@ function Game() {
 
     //spawnBullet(bulletsRef,tankGun,keysPressed)
 
-    tankUpdatePosistionCB(tank,tankGun,keysPressed,socket)
+    tankUpdatePosistionCB(keysPressed,socket)
     //bulletUpdatePosistionCB(bulletsRef,keysPressed)
 
-    tankMovingAnimationCB(ctx,gameStateRef,tankAnimationState,tankBodyImageRef)
-    //tankGunAnitionCV(ctx,tankGun,keysPressed,tankGunImageRef)
-    //tankBulletAnimationCB(ctx,bulletsRef,bulletImageRef)
+    tankMovingAnimationCB(ctx,tankStateRef,tankAnimationState,keysPressed,tankBodyImageRef)
+    tankGunAnimationCB(ctx,tankStateRef,tankGunAnimationState,keysPressed,tankGunImageRef)
+    tankBulletAnimationCB(ctx,bulletStateRef,bulletAnimationState,bulletImageRef)
 
     // 4. Yêu cầu frame tiếp theo
     animationFrameId.current = requestAnimationFrame(animate);

@@ -1,20 +1,12 @@
-export type Tank = {
-    x: number, // Vị trí ban đầu X (giữa)
-    y: number, // Vị trí ban đầu Y (giữa)
-    width: number,
-    height: number,
-    frameIndex: number, // Khung hình hoạt ảnh hiện tại
-    frameCounter: number, 
-    degree:number // Goc quay
-}
+import { BulletState } from "./Bullet"
 
-export type TankState = {
+
+export type Tank = {
     x: number, // Vị trí ban đầu X (giữa)
     y: number, // Vị trí ban đầu Y (giữa)
     degree:number // Goc quay
     health: number
-    isMoving: boolean
-    isFireing: boolean
+    lastShootTimestamp: number;
     width: number,
     height: number,
 }
@@ -23,19 +15,26 @@ export type TankInput = {
     direction: 'forward' | 'backward' | 'none',
     rotate: 'left' | 'right' | 'none',
     clientTimestamp: number,
+    isFire: boolean;
 }
 
 
-export interface GameState {
-  [playerId: string]: TankState;
+export interface TankState {
+  serverTimestamp: number;
+  tankStates: {
+    [playerId: string]: Tank;
+  };
 }
 
 export interface TankAnimationState {
     [playerId: string]: {
         frameIndex: number,
-        frameCounter: number
+        frameCounter: number,
+        isMoving: boolean
+        
     }
 }
+
 
 
 // interface PlayerState {

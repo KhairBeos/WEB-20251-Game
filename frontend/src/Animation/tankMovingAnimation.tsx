@@ -1,6 +1,6 @@
 import { RefObject, useCallback } from "react";
 import { KeyMap } from "../Model/KeyMap";
-import { GameState, Tank, TankAnimationState } from "../Model/Tank";
+import { Tank, TankAnimationState, TankState } from "../Model/Tank";
 const PLAYER_SPEED = 5;
 const CANVAS_WIDTH = screen.width;
 const CANVAS_HEIGHT = screen.height;
@@ -8,29 +8,40 @@ const ANIMATION_SPEED = 10; // Chuyển khung hình sau mỗi X frame game (Tố
 
 export const tankMovingAnimation = (
   ctx: CanvasRenderingContext2D,
-  gameState: RefObject<GameState>,
+  tankState: RefObject<TankState>,
   tankAnimationState: RefObject<TankAnimationState>,
+  keysPressed: RefObject<KeyMap>,
   frames: RefObject<HTMLImageElement[]>
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
     // console.log(tank.current.degree)
-    for (const playerId in gameState.current){
-      const p = gameState.current[playerId];
-      
+    const tankStates = tankState.current.tankStates;
+    const serverTimestamp = tankState.current.serverTimestamp;
+
+    // Duyệt qua tất cả các tank trong trạng thái nhận được từ server
+    for (const playerId in tankStates) {
+      const p = tankStates[playerId];
 
       // Khởi tạo trạng thái hoạt ảnh nếu chưa có
-      if(tankAnimationState.current[playerId] === undefined){
+      if (tankAnimationState.current[playerId] === undefined) {
         tankAnimationState.current[playerId] = {
-            frameIndex: 0,
-            frameCounter: 0
-        }
+          frameIndex: 0,
+          frameCounter: 0,
+          isMoving: false,
+        };
       }
 
-      const animState = tankAnimationState.current[playerId];
+      // Cập nhật trạng thái di chuyển dựa trên phím nhấn
+      if (keysPressed.current["w"] || keysPressed.current["s"])
+        tankAnimationState.current[playerId].isMoving = true;
+      else 
+        tankAnimationState.current[playerId].isMoving = false;
 
+
+      const animState = tankAnimationState.current[playerId];
       // Nếu nhân vật đang di chuyển, cập nhật hoạt ảnh
-      if (p.isMoving) {
+      if (animState.isMoving) {
         animState.frameCounter++;
         if (animState.frameCounter >= ANIMATION_SPEED) {
           animState.frameCounter = 0;
@@ -41,6 +52,7 @@ export const tankMovingAnimation = (
         animState.frameCounter = 0;
         animState.frameIndex = 0;
       }
+      // console.log(p.isMoving,animState.frameIndex, animState.frameCounter);
 
       ctx.save();
 
@@ -74,7 +86,7 @@ export const tankMovingAnimation = (
       ctx.drawImage(img, destX, destY, destWidth, destHeight);
 
       ctx.restore();
-    };
+    }
   };
   updateAnimation();
 };

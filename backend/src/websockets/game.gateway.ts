@@ -47,9 +47,17 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   handleMove(@MessageBody() tankInput: gameService.TankInput, @ConnectedSocket() client: Socket): void {
     // Chuyển input đến Game Service để xử lý trong vòng lặp game
     //console.log(`Received input from ${client.id}:`, tankInput);
-    console.log("received input")
+    //console.log("received input")
     this.gameService.handleTankInput(client.id, tankInput);
   }
+
+  // @SubscribeMessage('bulletInput')
+  // handleBulletFire(@MessageBody() bulletInput: any, @ConnectedSocket() client: Socket): void {
+  //   this.gameService.handleBulletFire(client.id, bulletInput);
+  // }
+ 
+
+
 
   
 

@@ -10,7 +10,7 @@ async function bootstrap() {
     origin: 'http://localhost:3000', // Chỉ cho phép frontend của bạn gọi
   });
 
-  app.useGlobalPipes(new ValidationPipe());
+  //app.useGlobalPipes(new ValidationPipe());
   
   await app.listen(process.env.PORT ?? 3001);
 }

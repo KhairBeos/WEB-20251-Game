@@ -12,20 +12,18 @@ import { Socket } from "socket.io-client";
 import { dir } from "console";
 
 export const tankUpdatePosistion = (
-  tank: RefObject<Tank>,
-  tankGun: RefObject<TankGun>,
   keysPressed: RefObject<KeyMap>,
   socket: Socket|null
 ) => {
   const updatePosition = () => {
-    const p = tank.current;
-    const gun = tankGun.current;
+    
     const keys = keysPressed.current;
     
     var tankInput : TankInput = {
       direction: 'none',
       rotate: 'none',
       clientTimestamp: Date.now(),
+      isFire: false,
     }
 
     // Xử lý quay xe tăng
@@ -36,6 +34,8 @@ export const tankUpdatePosistion = (
     if (keys["w"]) tankInput.direction = 'forward';
      
     if (keys["s"]) tankInput.direction = 'backward';
+
+    if( keys["j"] ) tankInput.isFire = true;
 
 
     // Gửi trạng thái đầu vào của người chơi lên server

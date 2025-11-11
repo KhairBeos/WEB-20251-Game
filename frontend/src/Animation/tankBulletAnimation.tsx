@@ -1,57 +1,75 @@
-import { RefObject, useCallback } from "react";
-import { KeyMap } from "../Model/KeyMap";
-import { Tank } from "../Model/Tank";
+import { RefObject } from "react";
 import { ANIMATION_SPEED } from "../GlobalSetting";
-import { TankGun } from "../Model/TankGun";
-import { Bullet } from "../Model/Bullet";
+import { BulletAnimationState, BulletState } from "../Model/Bullet";
 
 export const tankBulletAnimation = (
   ctx: CanvasRenderingContext2D,
-  bullets: RefObject<Bullet[]>,
-  frames: RefObject<HTMLImageElement[]>,
+  bulletState: RefObject<BulletState>,
+  bulletAnimationState: RefObject<BulletAnimationState>,
+  frames: RefObject<HTMLImageElement[]>
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
-    
-    bullets.current.forEach((b) => {
-        b.frameCounter++;
-        if (b.frameCounter >= ANIMATION_SPEED) {
-            b.frameCounter = 0;
-            b.frameIndex = Math.min(b.frameIndex + 1,frames.current.length-1) ;
-        }
-        console.log("Bullet Draw frames : ",b.frameIndex)
-        ctx.save();
-    
-        // Lấy góc quay (từ độ sang radian)
-        const angleInRadians = b.degree * (Math.PI / 180);
-    
-        // 2. Di chuyển gốc tọa độ đến tâm của tank
-        // Tâm X = tank.x + tank.width / 2
-        // Tâm Y = tank.y + tank.height / 2
-        ctx.translate(b.x, b.y);
-    
-        // 3. Xoay context theo góc đã tính (radian)
-        ctx.rotate(angleInRadians);
-    
-        // Lấy đối tượng Image tương ứng với khung hình hiện tại
-        const img = frames.current[b.frameIndex];
-        if(!img) {
-          ctx.restore()
-          return 
-        }
-    
-        // Vị trí vẽ trên Canvas (đích đến)
-        const destX = - b.width / 2; // Căn giữa
-        const destY = - b.height / 2; // Căn giữa
-    
-        // Kích thước vẽ trên Canvas
-        const destWidth = b.width;
-        const destHeight = b.height;
-    
-        ctx.drawImage(img, destX, destY, destWidth, destHeight);
-        ctx.restore()
-    })
+    const bulletStates = bulletState.current.bulletStates;
+    const serverTimestamp = bulletState.current.serverTimestamp;
 
+    // Duyệt qua tất cả các đạn trong trạng thái nhận được từ server
+    for (const playerId in bulletStates) {
+      // Khởi tạo trạng thái hoạt ảnh nếu chưa có
+      if (bulletAnimationState.current[playerId] === undefined) 
+        bulletAnimationState.current[playerId] = {};
+
+      const bullets = bulletStates[playerId];
+      const animStates = bulletAnimationState.current[playerId];
+
+      for (const b in bullets) {
+        const bullet = bullets[b];
+        // Khởi tạo trạng thái hoạt ảnh nếu chưa có
+        if (animStates[b] === undefined) {
+          animStates[b] = {
+            frameIndex: 0,
+            frameCounter: 0,
+          };
+        }
+
+        // Cập nhật hoạt ảnh đạn
+        const animState = animStates[b];
+        animState.frameCounter++;
+        if (animState.frameCounter >= ANIMATION_SPEED) {
+          animState.frameCounter = 0;
+          // Chuyển sang khung hình tiếp theo, nếu là khung cuối thì quay lại khung đầu (0)
+          animState.frameIndex = (animState.frameIndex + 1) % frames.current.length;
+        }
+
+        // Vẽ đạn lên Canvas
+        ctx.save();
+
+        // 1. Dịch chuyển context đến vị trí đạn
+        ctx.translate(bullet.x, bullet.y);
+
+        // 3. Xoay context theo góc đã tính (radian)
+        const angleInRadians = bullet.degree * (Math.PI / 180);
+        ctx.rotate(angleInRadians);
+
+        // Lấy đối tượng Image tương ứng với khung hình hiện tại
+        const img = frames.current[animState.frameIndex];
+        if (!img) {
+          ctx.restore();
+          return;
+        }
+
+        // Vị trí vẽ trên Canvas (đích đến)
+        const destX = -bullet.width / 2; // Căn giữa
+        const destY = -bullet.height / 2; // Căn giữa
+
+        // Kích thước vẽ trên Canvas
+        const destWidth = bullet.width;
+        const destHeight = bullet.height;
+
+        ctx.drawImage(img, destX, destY, destWidth, destHeight);
+        ctx.restore();
+      }
+    }
   };
 
   updateAnimation();

@@ -1,75 +1,91 @@
-import { RefObject, useCallback } from "react";
+import { RefObject } from "react";
 import { KeyMap } from "../Model/KeyMap";
-import { Tank } from "../Model/Tank";
-import { ANIMATION_SPEED } from "../GlobalSetting";
-import { TankGun } from "../Model/TankGun";
+import { TankState } from "../Model/Tank";
+import { TankGunAnimationState } from "../Model/TankGun";
 
 export const tankGunAnimation = (
   ctx: CanvasRenderingContext2D,
-  tank: RefObject<TankGun>,
+   tankState: RefObject<TankState>,
+  tankGunAnimationState: RefObject<TankGunAnimationState>,
   keysPressed: RefObject<KeyMap>,
-  frames: RefObject<HTMLImageElement[]>,
+  frames: RefObject<HTMLImageElement[]>
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
-    const p = tank.current;
-    const keys = keysPressed.current;
-    if(keys["j"] && !p.isShooting) {
-      console.log("Start Shotting")
-      p.isShooting = true, p.lastShoot = Date.now() 
-    }
+    const tankStates = tankState.current.tankStates;
+    const serverTimestamp = tankState.current.serverTimestamp;
+   
+    // Duyệt qua tất cả các tank trong trạng thái nhận được từ server
+    for (const playerId in tankStates) {
+      const p = tankStates[playerId];
 
-    // Nếu nhân vật đang di chuyển, cập nhật hoạt ảnh
-    if (p.isShooting) {
-      p.frameCounter++;
-      if (p.frameCounter >= ANIMATION_SPEED) {
-        p.frameCounter = 0;
-        // Chuyển sang khung hình tiếp theo, nếu là khung cuối thì quay lại khung đầu (0)
-        //console.log(p.frameIndex, frames.current.length-1, p.frameIndex == frames.current.length-1)
-       
-
-        
-        if(p.frameIndex == frames.current.length-1) {
-          p.isShooting = false
-          console.log("Stop shotting")
-        }
-        p.frameIndex = (p.frameIndex + 1) % frames.current.length;
+      // Khởi tạo trạng thái hoạt ảnh nếu chưa có
+      if (tankGunAnimationState.current[playerId] === undefined) {
+        tankGunAnimationState.current[playerId] = {
+          frameIndex: 0,
+          frameCounter: 0,
+          isFiring: false,
+        };
       }
-    } else {
-      p.frameCounter = 0;
-      p.frameIndex = 0;
+
+      if( keysPressed.current["j"] && p.lastShootTimestamp + 1000 < Date.now()) {
+        tankGunAnimationState.current[playerId].isFiring = true;
+        console.log("Set isFiring true for player ", playerId);
+      }
+      
+      const animState = tankGunAnimationState.current[playerId];
+      // Nếu nhân vật đang di chuyển, cập nhật hoạt ảnh
+      if (animState.isFiring) {
+        animState.frameCounter++;
+        console.log(animState.frameIndex, animState.frameCounter);
+        if (animState.frameCounter >= 5) {
+          animState.frameCounter = 0;
+          animState.frameIndex++;
+          // Ket thuc hoat anh khi ve het frame
+          if( animState.frameIndex === frames.current.length ){
+            animState.frameIndex = 0;
+            animState.isFiring = false;
+          }
+        }
+      } else {
+        animState.frameCounter = 0;
+        animState.frameIndex = 0;
+      }
+      // console.log(p.isMoving,animState.frameIndex, animState.frameCounter);
+
+      ctx.save();
+
+      // Lấy góc quay (từ độ sang radian)
+      const angleInRadians = p.degree * (Math.PI / 180);
+
+      // 2. Di chuyển gốc tọa độ đến tâm của tank
+      // Tâm X = tank.x + tank.width / 2
+      // Tâm Y = tank.y + tank.height / 2
+      ctx.translate(p.x, p.y);
+
+      // 3. Xoay context theo góc đã tính (radian)
+      ctx.rotate(angleInRadians);
+
+      // Lấy đối tượng Image tương ứng với khung hình hiện tại
+      const img = frames.current[animState.frameIndex];
+      if (!img) {
+        ctx.restore();
+        return;
+      }
+
+      // Vị trí vẽ trên Canvas (đích đến)
+      const destX = -p.width / 2; // Căn giữa
+      const destY = -p.height / 2; // Căn giữa
+
+      // Kích thước vẽ trên Canvas
+      const destWidth = p.width;
+      const destHeight = p.height;
+
+      //console.log(img,destX,destY,destWidth,destHeight)
+      ctx.drawImage(img, destX, destY, destWidth, destHeight);
+
+      ctx.restore();
     }
-
-    ctx.save();
-
-    // Lấy góc quay (từ độ sang radian)
-    const angleInRadians = p.degree * (Math.PI / 180);
-
-    // 2. Di chuyển gốc tọa độ đến tâm của tank
-    // Tâm X = tank.x + tank.width / 2
-    // Tâm Y = tank.y + tank.height / 2
-    ctx.translate(p.x, p.y);
-
-    // 3. Xoay context theo góc đã tính (radian)
-    ctx.rotate(angleInRadians);
-
-    // Lấy đối tượng Image tương ứng với khung hình hiện tại
-    const img = frames.current[p.frameIndex];
-    if(!img) {
-      ctx.restore()
-      return 
-    }
-
-    // Vị trí vẽ trên Canvas (đích đến)
-    const destX = - p.width / 2; // Căn giữa
-    const destY = - p.height / 2; // Căn giữa
-
-    // Kích thước vẽ trên Canvas
-    const destWidth = p.width;
-    const destHeight = p.height;
-
-    ctx.drawImage(img, destX, destY, destWidth, destHeight);
-    ctx.restore()
   };
 
   updateAnimation();

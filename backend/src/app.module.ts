@@ -11,16 +11,16 @@ import { UserModule } from './users/user.module';
     ConfigModule.forRoot({
       isGlobal: true, 
     }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule], // Import ConfigModule
-      useFactory: (configService: ConfigService) => ({
-        // Lấy link database từ file .env
-        uri: configService.get<string>('DATABASE_URL')!,
-      }),
-      inject: [ConfigService], // Tiêm ConfigService vào factory
-    }),
-    AuthModule,
-    UserModule,
+    // MongooseModule.forRootAsync({
+    //   imports: [ConfigModule], // Import ConfigModule
+    //   useFactory: (configService: ConfigService) => ({
+    //     // Lấy link database từ file .env
+    //     uri: configService.get<string>('DATABASE_URL')!,
+    //   }),
+    //   inject: [ConfigService], // Tiêm ConfigService vào factory
+    // }),
+    //AuthModule,
+    //UserModule,
     GameModule],
   controllers: [CatsController],
   providers: [],
