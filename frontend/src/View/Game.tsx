@@ -17,6 +17,7 @@ import { tankUpdatePosistion } from "../Position/tankUpdatePosition";
 
 import { Socket } from "socket.io-client";
 import { useSocket } from "../Hook/useSocket";
+import { tankHealthAnimation } from "../Animation/tankHealthAnimation";
 
 
 // Kích thước cố định của Canvas
@@ -123,8 +124,9 @@ function Game() {
 
   const tankUpdatePosistionCB = useCallback((
     keysPressed: RefObject<KeyMap>,
+    tankGunAnimationState: RefObject<TankGunAnimationState>,
     socket: Socket|null
-  ) => tankUpdatePosistion(keysPressed,socket),[])
+  ) => tankUpdatePosistion(keysPressed,tankGunAnimationState,socket),[])
 
   // Vòng lặp hoạt ảnh chính
   const animate = useCallback(() => {
@@ -152,12 +154,13 @@ function Game() {
 
     //spawnBullet(bulletsRef,tankGun,keysPressed)
 
-    tankUpdatePosistionCB(keysPressed,socket)
+    tankUpdatePosistionCB(keysPressed,tankGunAnimationState,socket)
     //bulletUpdatePosistionCB(bulletsRef,keysPressed)
 
     tankMovingAnimationCB(ctx,tankStateRef,tankAnimationState,keysPressed,tankBodyImageRef)
     tankGunAnimationCB(ctx,tankStateRef,tankGunAnimationState,keysPressed,tankGunImageRef)
     tankBulletAnimationCB(ctx,bulletStateRef,bulletAnimationState,bulletImageRef)
+    tankHealthAnimation(ctx,tankStateRef,keysPressed)
 
     // 4. Yêu cầu frame tiếp theo
     animationFrameId.current = requestAnimationFrame(animate);

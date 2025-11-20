@@ -85,6 +85,19 @@ export const tankMovingAnimation = (
       //console.log(img,destX,destY,destWidth,destHeight)
       ctx.drawImage(img, destX, destY, destWidth, destHeight);
 
+      // vẽ viền hộp tank
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(destX, destY, destWidth, destHeight);
+
+      // vẽ hình tròn quanh tank
+      ctx.beginPath();
+      ctx.arc(0, 0, p.radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = "blue";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    
+
       ctx.restore();
     }
   };

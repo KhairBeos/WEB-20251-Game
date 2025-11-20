@@ -17,6 +17,7 @@ export const tankGunAnimation = (
    
     // Duyệt qua tất cả các tank trong trạng thái nhận được từ server
     for (const playerId in tankStates) {
+      
       const p = tankStates[playerId];
 
       // Khởi tạo trạng thái hoạt ảnh nếu chưa có
@@ -25,19 +26,23 @@ export const tankGunAnimation = (
           frameIndex: 0,
           frameCounter: 0,
           isFiring: false,
+          lastAnimationTime: 0
         };
       }
+      
 
-      if( keysPressed.current["j"] && p.lastShootTimestamp + 1000 < Date.now()) {
-        tankGunAnimationState.current[playerId].isFiring = true;
-        console.log("Set isFiring true for player ", playerId);
-      }
+
+       if(tankGunAnimationState.current[playerId].isFiring 
+        && tankGunAnimationState.current[playerId].lastAnimationTime > p.lastShootTimestamp 
+        && p.lastShootTimestamp + 1000 > Date.now()) {
+          tankGunAnimationState.current[playerId].isFiring = false;
+        }
       
       const animState = tankGunAnimationState.current[playerId];
       // Nếu nhân vật đang di chuyển, cập nhật hoạt ảnh
       if (animState.isFiring) {
         animState.frameCounter++;
-        console.log(animState.frameIndex, animState.frameCounter);
+        //console.log(animState.frameIndex, animState.frameCounter);
         if (animState.frameCounter >= 5) {
           animState.frameCounter = 0;
           animState.frameIndex++;
@@ -45,6 +50,7 @@ export const tankGunAnimation = (
           if( animState.frameIndex === frames.current.length ){
             animState.frameIndex = 0;
             animState.isFiring = false;
+            animState.lastAnimationTime = Date.now();
           }
         }
       } else {

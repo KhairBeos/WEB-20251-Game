@@ -9,6 +9,8 @@ export type Tank = {
     lastShootTimestamp: number;
     width: number,
     height: number,
+    radius: number,
+    maxHealth: number,
 }
 
 export type TankInput = {

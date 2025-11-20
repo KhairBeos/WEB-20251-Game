@@ -1,11 +1,12 @@
 // pages/game.tsx hoặc components/GameClient.tsx
 "use client"
-import React from 'react';
 
-import { useEffect, useState } from 'react';
-import { useSocket } from '../Hook/useSocket';
+import { useState, useEffect } from "react";
+import { useSocket } from "../Hook/useSocket";
 
-const GameClient = () => {
+
+const GameClient = () => {  
+  
   const { socket, isConnected } = useSocket();
   const [gameState, setGameState] = useState<any>(null);
 
@@ -26,6 +27,7 @@ const GameClient = () => {
     }
   }, [socket, isConnected]);
 
+  
   // Xử lý Input (Ví dụ: Gửi sự kiện di chuyển)
   const handleMove = (direction: string) => {
     if (socket) {

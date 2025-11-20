@@ -2,18 +2,26 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Server } from 'socket.io';
 import { Logger } from '@nestjs/common';
+import { borderCollision } from './collision/BorderCollision';
+import { tankCollision } from './collision/TankCollision';
+import { GridSpatial } from './utils/GridSpartial';
+import { bulletVSTankCollision } from './collision/BulletVSTankCollision';
 
 const SHOOT_COOLDOWN = 1000; // 1000 ms giữa các lần bắn
-interface Tank {
+export interface Tank {
+  id:string;
   x: number;
   y: number;
   degree: number;
   health: number;
   width: number;
   height: number;
+  maxHealth: number;
+  radius: number;
   lastShootTimestamp: number;
 }
-interface Bullet {
+export interface Bullet {
+  id:string;
   x: number;
   y: number;
   width: number;
@@ -21,6 +29,7 @@ interface Bullet {
   degree: number;
   speed: number;
   damage: number;
+  ownerId: string;
 }
 
 interface BulletInput {
@@ -58,7 +67,6 @@ interface BulletState {
   };
 }
 
-
 interface TankInputBuffer {
   [playerId: string]: TankInput[];
 }
@@ -67,9 +75,10 @@ interface BulletInputBuffer {
   [playerId: string]: BulletInput[];
 }
 
-
 @Injectable()
 export class GameService implements OnModuleInit {
+  private readonly logger = new Logger(GameService.name);
+  
   private tankState: TankState = {
     serverTimestamp: 0,
     tankStates: {},
@@ -81,11 +90,15 @@ export class GameService implements OnModuleInit {
   };
 
 
+  private gridSpatial: GridSpatial = new GridSpatial();
+
+  constructor() {}
+  
 
   //private gameInputState: GameInputState = {};
   private tankInputBuffer: TankInputBuffer = {};
-  private bulletInputBuffer : BulletInputBuffer = {};
-  
+  private bulletInputBuffer: BulletInputBuffer = {};
+
   private server: Server;
   private readonly GAME_TICK_RATE = 100 / 60; // 60 FPS
   private readonly TANK_ROTATE_SPEED = 3; // degrees per tick
@@ -104,24 +117,27 @@ export class GameService implements OnModuleInit {
 
   // Thêm người chơi mới
   addPlayer(id: string) {
-    // Khởi tạo trạng thái input 
+    // Khởi tạo trạng thái input
     this.tankInputBuffer[id] = [];
     this.bulletInputBuffer[id] = [];
 
     // Khởi tạo trạng thái tank
     this.tankState.tankStates[id] = {
+      id:id,
       x: 0,
       y: 0,
       degree: Math.floor(Math.random() * 360),
       health: 100,
-      width: 40,
-      height: 80,
+      maxHealth: 100,
+      width: 66,
+      height: 86,
+      radius: 86/2,
       lastShootTimestamp: 0,
     };
 
     // Khởi tạo trạng thái đạn
     this.bulletState.bulletStates[id] = {};
-    
+
     console.log(
       `Player ${id} joined. Total: ${Object.keys(this.tankState.tankStates).length}`,
     );
@@ -154,8 +170,9 @@ export class GameService implements OnModuleInit {
     this.bulletInputBuffer[id].push(bulletInput);
 
     // 2. Sắp xếp Buffer dựa trên clientTimestamp để xử lý lệch thứ tự
-    this.bulletInputBuffer[id].sort((a, b) => a.clientTimestamp - b.clientTimestamp);
-
+    this.bulletInputBuffer[id].sort(
+      (a, b) => a.clientTimestamp - b.clientTimestamp,
+    );
   }
 
   // Xử lý input từ người chơi
@@ -167,23 +184,60 @@ export class GameService implements OnModuleInit {
     this.tankInputBuffer[id].push(input);
 
     // 2. Sắp xếp Buffer dựa trên clientTimestamp để xử lý lệch thứ tự
-    this.tankInputBuffer[id].sort((a, b) => a.clientTimestamp - b.clientTimestamp);
+    this.tankInputBuffer[id].sort(
+      (a, b) => a.clientTimestamp - b.clientTimestamp,
+    );
   }
 
-  
   // Vòng lặp game - Cập nhật trạng thái và gửi đi
   private gameLoop() {
+    
     // 1. Cập nhật logic game dựa trên input
     this.updateGameLogic();
     this.updateBulletLogic();
-    
+    this.gridSpatial.updateGrid(
+      Object.values(this.tankState.tankStates),
+      Object.values(this.bulletState.bulletStates).flatMap(bullets => Object.values(bullets)),
+    );  
+    var collisions = bulletVSTankCollision(
+      Object.values(this.tankState.tankStates),
+      Object.values(this.bulletState.bulletStates).flatMap(bullets => Object.values(bullets)),
+      this.gridSpatial,
+    );
+    // Xử lý va chạm
+    collisions.forEach(collision => {
+      const bulletOwnerId = collision.bulletId.split('_')[1];
+      if(!this.bulletState.bulletStates[bulletOwnerId]) return;
+      const bullet = this.bulletState.bulletStates[bulletOwnerId][collision.bulletId];
+      const tank = this.tankState.tankStates[collision.tankId];
+      if (bullet && tank) {
+        // Giảm máu tank
+        tank.health -= bullet.damage;
+        console.log(`Tank ${tank.id} hit by bullet ${bullet.id}. Health: ${tank.health}`);
+        // Xóa đạn sau khi va chạm
+        delete this.bulletState.bulletStates[bulletOwnerId][collision.bulletId];
+        // Kiểm tra tank bị hạ gục
+        if (tank.health <= 0) {
+          console.log(`Tank ${tank.id} destroyed!`);
+          // Xử lý tank bị hạ gục (ví dụ: đặt lại vị trí, hồi máu, v.v.)
+          tank.health = tank.maxHealth;
+          tank.x = 0;
+          tank.y = 0;
+        }
+      }
+    });
+
+    this.tankState.serverTimestamp = Date.now();
+    this.bulletState.serverTimestamp = Date.now();
+
+
     // 2. Gửi trạng thái game MỚI đến tất cả client
     if (this.server) {
       this.server.emit('tankState', this.tankState);
-      this.server.emit('bulletState', this.bulletState)
+      this.server.emit('bulletState', this.bulletState);
     }
   }
-  
+
   private updateBulletLogic() {
     // Tạo đạn mới từ input trong buffer
     for (const playerId in this.bulletInputBuffer) {
@@ -205,7 +259,8 @@ export class GameService implements OnModuleInit {
         const bulletId = `bullet_${playerId}_${now}`;
 
         // Tạo đạn mới ở vị trí và góc hiện tại của tank
-        const newBullet : Bullet = {
+        const newBullet: Bullet = {
+          id: bulletId,
           x: input.startX,
           y: input.startY,
           width: input.width,
@@ -213,7 +268,8 @@ export class GameService implements OnModuleInit {
           degree: input.degree,
           speed: input.speed,
           damage: input.damage,
-        }
+          ownerId: playerId,
+        };
         bullets[bulletId] = newBullet;
       }
     }
@@ -239,17 +295,12 @@ export class GameService implements OnModuleInit {
       // Xóa đạn nếu ra khỏi khung canvas (giả sử canvas 1200x800)
       for (const bulletId in bullets) {
         const bullet = bullets[bulletId];
-        if (
-          bullet.x < 0 ||
-          bullet.x > 1200 ||
-          bullet.y < 0 ||
-          bullet.y > 800
-        ) {
+        if (bullet.x < 0 || bullet.x > 1200 || bullet.y < 0 || bullet.y > 800) {
           delete bullets[bulletId];
         }
+      }
     }
   }
-}
 
   private updateGameLogic() {
     const SPEED = 4;
@@ -266,21 +317,22 @@ export class GameService implements OnModuleInit {
       });
 
       // Cập nhật trạng thái dựa trên input
+      let deltaDegree = 0;
       let newDegree = tank.degree;
-      let newX = tank.x;
-      let newY = tank.y;
 
       for (const input of tankInputs) {
         // Xử lý quay xe tăng
         switch (input.rotate) {
           case 'left':
-            newDegree -= this.TANK_ROTATE_SPEED;
+            deltaDegree = -this.TANK_ROTATE_SPEED;
             break;
           case 'right':
-            newDegree += this.TANK_ROTATE_SPEED;
+            deltaDegree = this.TANK_ROTATE_SPEED;
             break;
         }
-        newDegree = (newDegree + 360) % 360; // Giữ trong 0-359
+       
+        // Cập nhật góc quay mới
+        newDegree = (newDegree + deltaDegree + 360) % 360;
 
         // Tính toán góc quay hiện tại
         const angleInRadians = newDegree * (Math.PI / 180);
@@ -301,9 +353,17 @@ export class GameService implements OnModuleInit {
             break;
         }
 
-        newX += deltaX;
-        newY += deltaY;
+        tank.x += deltaX;
+        tank.y += deltaY;
+        tank.degree = newDegree;
 
+        // giới hạn vị trí trong khung canvas (giả sử canvas 1200x800)
+        borderCollision(tank, 1200, 800);
+
+        // giới hạn va chạm giữa các tank
+        tankCollision(this.tankState.tankStates, tank, deltaX, deltaY);
+
+        // Xử lý bắn
         if (input.isFire) {
           console.log('Firing detected in input buffer');
           // Xử lý bắn
@@ -321,34 +381,16 @@ export class GameService implements OnModuleInit {
               height: 36,
               degree: tank.degree,
               speed: 2,
-              damage: 10
+              damage: 10,
             });
           }
         }
-      }
-
-      // Áp dụng cập nhật cuối cùng sau khi xử lý tất cả input
-      tank.x = newX;
-      tank.y = newY;
-      tank.degree = newDegree;
-
-      // giới hạn vị trí trong khung canvas (giả sử canvas 1200x800)
-      if (tank.x < tank.width / 2) {
-        tank.x = tank.width / 2;
-      }
-      if (tank.x > 1200 - tank.width / 2) {
-        tank.x = 1200 - tank.width / 2;
-      }
-      if (tank.y < tank.height / 2) {
-        tank.y = tank.height / 2;
-      }
-      if (tank.y > 800 - tank.height / 2) {
-        tank.y = 800 - tank.height / 2;
       }
     }
     // Xóa các input đã xử lý khỏi buffer
     for (const playerId in this.tankInputBuffer) {
       this.tankInputBuffer[playerId] = [];
     }
+    // Xử lý tanks va chạm
   }
 }
