@@ -13,7 +13,7 @@ import { KeyMap } from "../Model/KeyMap";
 import { TankAnimationState, TankState } from "../Model/Tank";
 import { TankGun, TankGunAnimationState } from "../Model/TankGun";
 import { tankUpdatePosistion } from "../Position/tankUpdatePosition";
-
+import Scoreboard from "./Scoreboard"; 
 
 import { Socket } from "socket.io-client";
 import { useSocket } from "../Hook/useSocket";
@@ -180,12 +180,15 @@ function Game() {
   }, [animate, isImageLoaded]);
 
   return (
+  <div className="w-full h-screen bg-gray-900 overflow-hidden relative">
+    <Scoreboard />
     <canvas
       ref={canvasRef}
       width={CANVAS_WIDTH}
       height={CANVAS_HEIGHT}
       className="border-4 border-purple-500 rounded-lg bg-gray-50"
     />
+  </div>
   );
 }
 
