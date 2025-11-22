@@ -5,16 +5,16 @@ import { TankGunAnimationState } from "../Model/TankGun";
 
 export const tankGunAnimation = (
   ctx: CanvasRenderingContext2D,
-   tankState: RefObject<TankState>,
+  tankState: RefObject<TankState>,
   tankGunAnimationState: RefObject<TankGunAnimationState>,
   keysPressed: RefObject<KeyMap>,
-  frames: RefObject<HTMLImageElement[]>
+  frames: RefObject<HTMLImageElement[]>,
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
     const tankStates = tankState.current.tankStates;
     const serverTimestamp = tankState.current.serverTimestamp;
-   
+
     // Duyệt qua tất cả các tank trong trạng thái nhận được từ server
     for (const playerId in tankStates) {
       const p = tankStates[playerId];
@@ -28,11 +28,14 @@ export const tankGunAnimation = (
         };
       }
 
-      if( keysPressed.current["j"] && p.lastShootTimestamp + 1000 < Date.now()) {
+      if (
+        keysPressed.current["j"] &&
+        p.lastShootTimestamp + 1000 < Date.now()
+      ) {
         tankGunAnimationState.current[playerId].isFiring = true;
         console.log("Set isFiring true for player ", playerId);
       }
-      
+
       const animState = tankGunAnimationState.current[playerId];
       // Nếu nhân vật đang di chuyển, cập nhật hoạt ảnh
       if (animState.isFiring) {
@@ -42,7 +45,7 @@ export const tankGunAnimation = (
           animState.frameCounter = 0;
           animState.frameIndex++;
           // Ket thuc hoat anh khi ve het frame
-          if( animState.frameIndex === frames.current.length ){
+          if (animState.frameIndex === frames.current.length) {
             animState.frameIndex = 0;
             animState.isFiring = false;
           }

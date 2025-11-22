@@ -1,10 +1,7 @@
 import { RefObject, useCallback } from "react";
 import { KeyMap } from "../Model/KeyMap";
 import { Tank, TankAnimationState, TankState } from "../Model/Tank";
-const PLAYER_SPEED = 5;
-const CANVAS_WIDTH = screen.width;
-const CANVAS_HEIGHT = screen.height;
-const ANIMATION_SPEED = 10; // Chuyển khung hình sau mỗi X frame game (Tốc độ chuyển động: 60fps / 6 = 10 khung hình/giây)
+import { CANVAS_WIDTH, CANVAS_HEIGHT, ANIMATION_SPEED } from "../GlobalSetting"; // Chuyển khung hình sau mỗi X frame game (Tốc độ chuyển động: 60fps / 6 = 10 khung hình/giây)
 
 export const tankMovingAnimation = (
   ctx: CanvasRenderingContext2D,

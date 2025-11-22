@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import { Schema, Document } from 'mongoose';
 
 // 1. Định nghĩa Interface cho TypeScript (và extends Document)
 export interface User extends Document {
