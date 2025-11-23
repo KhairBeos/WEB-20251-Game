@@ -5,16 +5,16 @@ import { TankGunAnimationState } from "../Model/TankGun";
 
 export const tankGunAnimation = (
   ctx: CanvasRenderingContext2D,
-   tankState: RefObject<TankState>,
+  tankState: RefObject<TankState>,
   tankGunAnimationState: RefObject<TankGunAnimationState>,
   keysPressed: RefObject<KeyMap>,
-  frames: RefObject<HTMLImageElement[]>
+  frames: RefObject<HTMLImageElement[]>,
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
     const tankStates = tankState.current.tankStates;
     const serverTimestamp = tankState.current.serverTimestamp;
-   
+
     // Duyệt qua tất cả các tank trong trạng thái nhận được từ server
     for (const playerId in tankStates) {
       
@@ -30,8 +30,6 @@ export const tankGunAnimation = (
         };
       }
       
-
-
        if(tankGunAnimationState.current[playerId].isFiring 
         && tankGunAnimationState.current[playerId].lastAnimationTime > p.lastShootTimestamp 
         && p.lastShootTimestamp + 1000 > Date.now()) {
@@ -47,7 +45,7 @@ export const tankGunAnimation = (
           animState.frameCounter = 0;
           animState.frameIndex++;
           // Ket thuc hoat anh khi ve het frame
-          if( animState.frameIndex === frames.current.length ){
+          if (animState.frameIndex === frames.current.length) {
             animState.frameIndex = 0;
             animState.isFiring = false;
             animState.lastAnimationTime = Date.now();

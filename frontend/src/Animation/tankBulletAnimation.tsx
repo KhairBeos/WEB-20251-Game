@@ -38,7 +38,8 @@ export const tankBulletAnimation = (
         if (animState.frameCounter >= ANIMATION_SPEED) {
           animState.frameCounter = 0;
           // Chuyển sang khung hình tiếp theo, nếu là khung cuối thì quay lại khung đầu (0)
-          animState.frameIndex = (animState.frameIndex + 1) % frames.current.length;
+          animState.frameIndex =
+            (animState.frameIndex + 1) % frames.current.length;
         }
 
         // Vẽ đạn lên Canvas

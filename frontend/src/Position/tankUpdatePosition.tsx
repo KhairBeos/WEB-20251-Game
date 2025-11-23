@@ -23,7 +23,7 @@ export const tankUpdatePosistion = (
     
     const keys = keysPressed.current;
     
-    var tankInput : TankInput = {
+    const tankInput : TankInput = {
       direction: 'none',
       rotate: 'none',
       clientTimestamp: Date.now(),

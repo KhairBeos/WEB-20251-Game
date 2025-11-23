@@ -1,5 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { Bullet, Tank } from "../game.service";
+import { Bullet } from "../model/Bullet";
+import { Tank } from "../model/Tank";
+
 
 @Injectable()
 export class GridSpatial {
