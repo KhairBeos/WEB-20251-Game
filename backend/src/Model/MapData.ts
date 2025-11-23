@@ -9,6 +9,8 @@
 
 export const MAP_ROWS = 80;
 export const MAP_COLS = 80;
+export const TILE_SIZE = 40; // Đơn vị cơ sở
+
 
 const generateMap = () => {
   const map: number[][] = Array(MAP_ROWS)

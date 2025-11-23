@@ -1,4 +1,5 @@
-import { Bullet, Tank } from "../game.service";
+import { Bullet } from "../model/Bullet";
+import { Tank } from "../model/Tank";
 import { GridSpatial } from "../utils/GridSpartial";
 
 export function bulletVSTankCollision(tanks: Tank[], bullets: Bullet[], grid: GridSpatial) {

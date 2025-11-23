@@ -11,6 +11,7 @@ import {
 import { Socket, Server } from 'socket.io';
 import * as gameService from './game.service';
 import { Logger, OnModuleInit } from '@nestjs/common';
+import type { TankInput } from './model/Tank';
 
 @WebSocketGateway({
   cors: { origin: '*' },
@@ -45,7 +46,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   // Dữ liệu client gửi lên: socket.emit('playerInput', { direction: 'right' });
   @SubscribeMessage('tankInput')
   handleMove(
-    @MessageBody() tankInput: gameService.TankInput,
+    @MessageBody() tankInput: TankInput,
     @ConnectedSocket() client: Socket,
   ): void {
     // Chuyển input đến Game Service để xử lý trong vòng lặp game

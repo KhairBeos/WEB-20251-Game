@@ -1,14 +1,14 @@
-import { Tank } from "../game.service";
+import { Tank } from "../model/Tank";
 
-export function tankCollision(tankStates: { [playerId: string]: Tank },tank:Tank, deltaX: number, deltaY: number) {
+export function tankCollision(tankStates: { [playerId: string]: Tank },tank:Tank) {
     for (const otherPlayerId in tankStates) {
         const otherTank = tankStates[otherPlayerId];
         // Không kiểm tra va chạm với chính nó
         if (otherTank === tank) continue;
 
         // Kiểm tra va chạm hình tròn với raidus
-        const distX = (tank.x + deltaX) - otherTank.x;
-        const distY = (tank.y + deltaY) - otherTank.y;
+        const distX = tank.x - otherTank.x;
+        const distY = tank.y - otherTank.y;
         
         const distance = Math.sqrt(distX * distX + distY * distY);
         const minDistance = tank.radius + otherTank.radius;

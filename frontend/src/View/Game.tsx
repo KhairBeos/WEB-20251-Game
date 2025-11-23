@@ -1,23 +1,21 @@
 "use client";
-import { Ref, RefObject, useCallback, useEffect, useRef, useState } from "react";
+import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { tankBulletAnimation } from "../Animation/tankBulletAnimation";
 import { tankGunAnimation } from "../Animation/tankGunAnimation";
 import { tankMovingAnimation } from "../Animation/tankMovingAnimation";
+import { TILE_SIZE } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
 import { useGameInput } from "../Hook/useGameInput";
 import useLoadLazeBullet from "../Hook/useLoadLazeBullet";
 import useLoadTankBody from "../Hook/useLoadTankBody";
 import useLoadTankBullet from "../Hook/useLoadTankBullet";
 import useLoadTankGun from "../Hook/useLoadTankGun";
 import { useSocket } from "../Hook/useSocket";
-import { tankHealthAnimation } from "../Animation/tankHealthAnimation";
 import { Bullet, BulletAnimationState, BulletState } from "../Model/Bullet";
+import { KeyMap } from "../Model/KeyMap";
+import { INITIAL_MAP, MAP_COLS, MAP_ROWS } from "../Model/MapData";
 import { TankAnimationState, TankState } from "../Model/Tank";
 import { TankGunAnimationState } from "../Model/TankGun";
 import { tankUpdatePosistion } from "../Position/tankUpdatePosition";
-import { CANVAS_HEIGHT, CANVAS_WIDTH, TILE_SIZE } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
-import { INITIAL_MAP, MAP_COLS, MAP_ROWS } from "../Model/MapData"; 
-import { Socket } from "dgram";
-import { KeyMap } from "../Model/KeyMap";
 
 // --- BẬT DEBUG MODE: True để hiện khung va chạm ---
 const DEBUG_MODE = true; 

@@ -1,4 +1,4 @@
-import { Tank } from "../game.service";
+import { Tank } from "../model/Tank";
 
 export function borderCollision(tank: Tank, mapWidth: number, mapHeight: number) {
     // Giới hạn vị trí của tank trong biên của bản đồ
