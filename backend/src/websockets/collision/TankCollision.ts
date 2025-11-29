@@ -13,6 +13,12 @@ export function tankCollision(tankStates: { [playerId: string]: Tank },tank:Tank
         const distance = Math.sqrt(distX * distX + distY * distY);
         const minDistance = tank.radius + otherTank.radius;
 
+        if(distance === 0) {
+            tank.x += tank.radius;
+            tank.y += tank.radius;
+            continue;
+        }
+
         if (distance < minDistance) {
             // Va chạm xảy ra, tính toán lại vị trí của tank để tránh chồng lấn
             const overlap = minDistance - distance;

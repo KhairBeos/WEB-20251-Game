@@ -10,13 +10,32 @@
 export const MAP_ROWS = 80;
 export const MAP_COLS = 80;
 export const TILE_SIZE = 40; // Đơn vị cơ sở
+export type MapCell = {
+  root_r: number;
+  root_c: number;
+  val: number;
+}
 
+// 3. Spawn Point
+export const SPAWNPOINTS = [
+  { r: 6, c: 6 },
+  { r: 6, c: MAP_COLS - 8 },
+  { r: MAP_ROWS - 8, c: 6 },
+  { r: MAP_ROWS - 8, c: MAP_COLS - 8 },
+];
 
 const generateMap = () => {
-  const map: number[][] = Array(MAP_ROWS)
-    .fill(0)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    .map(() => Array(MAP_COLS).fill(0)) as number[][];
+
+  // Tạo ma trận map ban đầu
+  const map: MapCell[][] = [];
+  for (let r = 0; r < MAP_ROWS; r++) {
+    const row: MapCell[] = [];
+    for (let c = 0; c < MAP_COLS; c++) {
+      row.push({ root_r: -1, root_c: -1, val: 0 });
+    }
+    map.push(row);
+  }
+ 
   // Hàm hỗ trợ đặt vật thể
   const placeObject = (r: number, c: number, type: number) => {
     let size = 1;
@@ -28,20 +47,21 @@ const generateMap = () => {
     // Check trống
     for (let i = 0; i < size; i++) {
       for (let j = 0; j < size; j++) {
-        if (map[r + i][c + j] !== 0) return;
+        if (map[r + i][c + j].val !== 0) return;
       }
     }
 
     // Đặt gốc
-    map[r][c] = type;
-
-    // Đặt thân (chặn đường)
-    for (let i = 0; i < size; i++) {
-      for (let j = 0; j < size; j++) {
-        if (i === 0 && j === 0) continue;
-        map[r + i][c + j] = 99;
+    map[r][c] = { root_r: r, root_c: c, val: type };
+    // Đặt các ô con
+    if (size > 1) {
+      for (let i = 0; i < size; i++) {
+        for (let j = 0; j < size; j++) {
+          if (i === 0 && j === 0) continue;
+          map[r + i][c + j] = { root_r: r, root_c: c, val: 99 }; // Thân vật cản tàng hình
+        } 
       }
-    }
+    } 
   };
 
   // 1. Viền cây
@@ -65,24 +85,20 @@ const generateMap = () => {
     }
   }
 
-  // 3. Spawn Point
-  const spawns = [
-    { r: 6, c: 6 },
-    { r: 6, c: MAP_COLS - 8 },
-    { r: MAP_ROWS - 8, c: 6 },
-    { r: MAP_ROWS - 8, c: MAP_COLS - 8 },
-  ];
 
-  spawns.forEach((pos) => {
+  SPAWNPOINTS.forEach((pos) => {
     // Dọn dẹp 5x5 quanh spawn
     for (let i = -2; i <= 3; i++) {
       for (let j = -2; j <= 3; j++) {
-        if (map[pos.r + i] && map[pos.r + i][pos.c + j] !== undefined) {
-          map[pos.r + i][pos.c + j] = 0;
-        }
+        if (map[pos.r + i] && map[pos.r + i][pos.c + j] !== undefined) 
+          map[pos.r + i][pos.c + j] = { 
+            root_r: -1, root_c: -1, val: 0  
+          }
       }
     }
-    map[pos.r][pos.c] = 9;
+    // Đặt trụ spawn
+    //map[pos.r][pos.c] = { root_r: pos.r, root_c: pos.c, val: 9 };
+
   });
 
   return map;

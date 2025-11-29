@@ -10,6 +10,14 @@
 export const MAP_ROWS = 80; // 80 ô * 40px = 3200px
 export const MAP_COLS = 80;
 
+export const TILE_SIZE = 40; // Kích thước mỗi ô là 40x40px
+
+export type MapCell = {
+  root_r: number; // Dòng ô gốc (Top-Left) của vật thể chiếm ô này
+  root_c: number; // Cột ô gốc (Top-Left) của vật thể chiếm ô này
+  val: number;    // Giá trị ô (theo quy ước trên)
+};
+
 const generateMap = () => {
   // 1. Tạo mảng 2 chiều toàn số 0 (Đất)
   const map: number[][] = Array(MAP_ROWS).fill(0).map(() => Array(MAP_COLS).fill(0));

@@ -12,10 +12,16 @@ import useLoadTankGun from "../Hook/useLoadTankGun";
 import { useSocket } from "../Hook/useSocket";
 import { Bullet, BulletAnimationState, BulletState } from "../Model/Bullet";
 import { KeyMap } from "../Model/KeyMap";
-import { INITIAL_MAP, MAP_COLS, MAP_ROWS } from "../Model/MapData";
-import { TankAnimationState, TankState } from "../Model/Tank";
+import { INITIAL_MAP, MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
+import { Tank, TankAnimationState, TankState } from "../Model/Tank";
 import { TankGunAnimationState } from "../Model/TankGun";
 import { tankUpdatePosistion } from "../Position/tankUpdatePosition";
+import { tankHealthAnimation } from "../Animation/tankHealthAnimation";
+import { start } from "repl";
+import useLoadTree from "../Hook/useLoadTree";
+import drawMap from "../Animation/drawMap";
+import useLoadGround from "../Hook/useLoadGround";
+import useLoadTower from "../Hook/useLoadTower";
 
 // --- BẬT DEBUG MODE: True để hiện khung va chạm ---
 const DEBUG_MODE = true; 
@@ -24,10 +30,10 @@ function Game() {
   // --- STATE GAME ---
   const tankStateRef = useRef<TankState>({ serverTimestamp: 0, tankStates: {} });
   const bulletStateRef = useRef<BulletState>({ serverTimestamp: 0, bulletStates: {} });
-  const [dynamicMap, setDynamicMap] = useState<number[][]>([]);
+  const dynamicMap= useRef<MapCell[][]>([]);
   
   // --- STATE MÀN HÌNH (VIEWPORT) ---
-  const [viewport, setViewport] = useState({ w: 1200, h: 800 });
+  const viewport = useRef({ w: 1200, h: 800 });
 
   const { socket, isConnected } = useSocket();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,6 +44,11 @@ function Game() {
   const {imageRef:tankGunImageRef,isImageLoaded:isGunImageLoaded} =  useLoadTankGun()
   const {imageRef:lazeImageRef,isImageLoaded:isLazeImageLoaded} =  useLoadLazeBullet()
   const {imageRef:bulletImageRef,isImageLoaded:isBulletImageLoaded} =  useLoadTankBullet()
+  const {imageRef:treeImageRef,isImageLoaded:isTreeImageLoaded} =  useLoadTree()
+  const {imageRef:groundImageRef,isImageLoaded:isGroundImageLoaded} =  useLoadGround()
+  const {imageRef:towerRef,isImageLoaded:isTowerImageLoaded} =  useLoadTower()
+  
+   const mapAssetsRef = useRef<any>({});
 
   const bulletsRef = useRef<Bullet[]>([]);
   // Ref để theo dõi trạng thái các phím W A S D đang được nhấn
@@ -53,34 +64,31 @@ function Game() {
 
    // useEffect để khởi tạo, chạy hoạt ảnh và gắn event listeners
   //  XỬ LÝ RESIZE MÀN HÌNH ---
-  useEffect(() => {
-      const handleResize = () => {
-          // Cập nhật kích thước canvas theo cửa sổ trình duyệt
-          setViewport({ w: window.innerWidth, h: window.innerHeight });
-      };
-      handleResize(); // Gọi ngay lần đầu
-      window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // useEffect(() => {
+  //     const handleResize = () => {
+  //         // Cập nhật kích thước canvas theo cửa sổ trình duyệt
+  //         viewport({ w: window.innerWidth, h: window.innerHeight });
+  //     };
+  //     handleResize(); // Gọi ngay lần đầu
+  //     window.addEventListener('resize', handleResize);
+  //     return () => window.removeEventListener('resize', handleResize);
+  // }, []);
 
+  console.log(tankStateRef.current);
   //  SOCKET LISTENERS ---
   useEffect(() => {
     if (socket && isConnected) {
       socket.on('tankState', (s) => tankStateRef.current = s);
       socket.on('bulletState', (s) => bulletStateRef.current = s);
+
       
       // Nhận Map ban đầu
-      socket.on('mapData', ({ map }) => setDynamicMap(map));
+      socket.on('mapData', ({ map }) => dynamicMap.current = map);
       
       // Nhận cập nhật Map (khi tường vỡ)
-      socket.on('mapUpdate', ({ r, c, val }) => {
-         setDynamicMap(prev => {
-             if (prev.length === 0) return prev;
-             const newMap = [...prev];
-             newMap[r] = [...prev[r]];
-             newMap[r][c] = val;
-             return newMap;
-         });
+      socket.on('mapUpdate', ({ r, c, cell }) => {
+        console.log("Map update received:", r, c, cell);
+          dynamicMap.current[r][c] = cell;
       });
       return () => { 
           socket.off('tankState'); socket.off('bulletState'); 
@@ -122,9 +130,23 @@ function Game() {
     socket: any,
   ) => tankUpdatePosistion(keysPressed,tankGunAnimationState,socket),[])
 
+  // draw map 
+  const drawMapCB = useCallback((
+    camX:number,
+    camY:number,
+    viewPort: RefObject<{ w: number; h: number }>,
+    dynamicMap: RefObject<MapCell[][]>,
+    groundImg: RefObject<HTMLImageElement[]>,
+    treeImg: RefObject<HTMLImageElement[]>,
+    towerImg: RefObject<HTMLImageElement[]>,
+    ctx: CanvasRenderingContext2D
+  ) => {
+    drawMap(camX,camY,dynamicMap,viewPort,groundImg,treeImg,towerImg,ctx)
+  },[isGroundImageLoaded,isTreeImageLoaded,isTowerImageLoaded])
+
 
   // --- 3. LOAD ASSETS ---
-  const mapAssetsRef = useRef<any>({});
+ 
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   useEffect(() => {
@@ -142,69 +164,7 @@ function Game() {
     });
   }, []);
 
-
-
-  // --- 4. HÀM VẼ MAP ---
-  const drawMap = useCallback((ctx: CanvasRenderingContext2D) => {
-    const map = dynamicMap.length > 0 ? dynamicMap : INITIAL_MAP;
-    const imgs = mapAssetsRef.current;
-    const TILE = 40; // Base unit
-
-    // LỚP 1: BACKGROUND (Vẽ trước)
-    for (let r = 0; r < map.length; r++) {
-        for (let c = 0; c < map[0].length; c++) {
-            if (imgs.ground) ctx.drawImage(imgs.ground, c*TILE, r*TILE, TILE, TILE);
-            
-            // Debug Grid mờ mờ để dễ căn chỉnh
-            if (DEBUG_MODE) {
-                ctx.strokeStyle = "rgba(255,255,255,0.05)";
-                ctx.lineWidth = 1;
-                ctx.strokeRect(c*TILE, r*TILE, TILE, TILE);
-            }
-        }
-    }
-
-    // LỚP 2: VẬT THỂ & DEBUG HITBOX (Vẽ đè lên)
-    for (let r = 0; r < map.length; r++) {
-        for (let c = 0; c < map[0].length; c++) {
-            const val = map[r][c];
-            const x = c * TILE;
-            const y = r * TILE;
-
-            // Vẽ Tower (80x80)
-            if (val >= 1 && val <= 4) {
-                let img = val === 4 ? imgs.tow4 : val === 3 ? imgs.tow3 : val === 2 ? imgs.tow2 : imgs.tow1;
-                if (img) ctx.drawImage(img, x, y, 80, 80);
-
-                // [DEBUG] Vẽ khung đỏ (Square Hitbox)
-                if (DEBUG_MODE) {
-                    ctx.strokeStyle = "red";
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(x, y, 80, 80);
-                }
-            }
-            // Vẽ Tree (120x120)
-            else if (val === 10 && imgs.tree) {
-                ctx.drawImage(imgs.tree, x, y, 120, 120);
-
-                // [DEBUG] Vẽ vòng tròn xanh (Circle Hitbox)
-                if (DEBUG_MODE) {
-                    ctx.strokeStyle = "#00ff00"; 
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    // Tâm cây: x + 1.5 ô (40*1.5 = 60)
-                    ctx.arc(x + 60, y + 60, 50, 0, 2 * Math.PI); 
-                    ctx.stroke();
-                }
-            }
-            // [DEBUG] Vẽ ô Block ảo (99)
-            else if (val === 99 && DEBUG_MODE) {
-                 ctx.fillStyle = "rgba(255, 0, 0, 0.1)"; // Đỏ nhạt
-                 ctx.fillRect(x, y, TILE, TILE);
-            }
-        }
-    }
-  }, [dynamicMap]);
+  
 
   // --- 5. GAME LOOP (ANIMATE) ---
   const animate = useCallback(() => {
@@ -218,7 +178,7 @@ function Game() {
 
     // Xóa màn hình theo kích thước viewport
     ctx.fillStyle = "#2d3436"; 
-    ctx.fillRect(0, 0, viewport.w, viewport.h);
+    ctx.fillRect(0, 0, viewport.current.w, viewport.current.h);
     
     const myTank = socket?.id ? tankStateRef.current.tankStates[socket.id] : null;
     
@@ -231,8 +191,8 @@ function Game() {
 
     if (myTank) { 
         // 1. Tính vị trí muốn camera đến (Tank ở giữa)
-        camX = myTank.x - viewport.w / 2;
-        camY = myTank.y - viewport.h / 2; 
+        camX = myTank.x - viewport.current.w / 2;
+        camY = myTank.y - viewport.current.h / 2; 
 
         // 2. Giới hạn (Clamp)
         // Không nhỏ hơn 0
@@ -241,22 +201,23 @@ function Game() {
         
         // Không lớn hơn (Kích thước Map - Kích thước Màn hình)
         // (Chỉ clamp nếu map lớn hơn màn hình)
-        if (MAP_REAL_W > viewport.w) {
-            camX = Math.min(camX, MAP_REAL_W - viewport.w);
+        if (MAP_REAL_W > viewport.current.w) {
+            camX = Math.min(camX, MAP_REAL_W - viewport.current.w);
         }
-        if (MAP_REAL_H > viewport.h) {
-            camY = Math.min(camY, MAP_REAL_H - viewport.h);
+        if (MAP_REAL_H > viewport.current.h) {
+            camY = Math.min(camY, MAP_REAL_H - viewport.current.h);
         }
     }
 
     ctx.save();
     ctx.translate(-camX, -camY); // Dịch chuyển thế giới
 
-    drawMap(ctx); // Vẽ map trước
-    tankUpdatePosistionCB(keysPressed, tankGunAnimationState,socket);
+   drawMapCB(camX, camY, viewport, dynamicMap, groundImageRef, treeImageRef, towerRef, ctx);
+    tankUpdatePosistion(keysPressed, tankGunAnimationState, socket); // Cập nhật vị trí tank dựa trên phím nhấn và gửi lên server
     tankMovingAnimationCB(ctx, tankStateRef, tankAnimationState, keysPressed, tankBodyImageRef);
     tankGunAnimationCB(ctx, tankStateRef, tankGunAnimationState, keysPressed, tankGunImageRef);
     tankBulletAnimationCB(ctx, bulletStateRef, bulletAnimationState, bulletImageRef);
+    tankHealthAnimation(ctx, tankStateRef, keysPressed);
     
     ctx.restore(); // Khôi phục để vẽ UI cố định
 
@@ -267,7 +228,7 @@ function Game() {
         ctx.fillText(`DEBUG MODE ON`, 20, 30);
         ctx.fillText(`Tank: ${Math.round(myTank?.x || 0)}, ${Math.round(myTank?.y || 0)}`, 20, 50);
         ctx.fillText(`Cam: ${Math.round(camX)}, ${Math.round(camY)}`, 20, 70);
-        ctx.fillText(`Screen: ${viewport.w} x ${viewport.h}`, 20, 90);
+        ctx.fillText(`Screen: ${viewport.current.w} x ${viewport.current.h}`, 20, 90);
     }
     
     animationFrameId.current = requestAnimationFrame(animate);
@@ -282,8 +243,8 @@ function Game() {
   return (
     <canvas 
         ref={canvasRef} 
-        width={viewport.w} 
-        height={viewport.h} 
+        width={viewport.current.w} 
+        height={viewport.current.h} 
         className="bg-gray-900 block touch-none" // block để xóa dòng trắng, touch-none để tránh scroll trên mobile
         style={{ width: '100vw', height: '100vh' }} 
     />

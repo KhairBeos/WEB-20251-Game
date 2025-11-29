@@ -3,7 +3,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Server } from 'socket.io';
 
 // Import MapData nội bộ (Copy file MapData vào backend/src/Model/MapData.ts trước nhé)
-import { INITIAL_MAP, MAP_ROWS, MAP_COLS, TILE_SIZE } from '../Model/MapData';
+import { INITIAL_MAP, MAP_ROWS, MAP_COLS, TILE_SIZE, MapCell, SPAWNPOINTS } from '../Model/MapData';
 import { borderCollision } from './collision/BorderCollision';
 import { tankCollision } from './collision/TankCollision';
 import { GridSpatial } from './utils/GridSpartial';
@@ -13,12 +13,13 @@ import { BulletState, BulletInputBuffer, BulletInput } from './model/Bullet';
 import { TankState, TankInput, TankInputBuffer } from './model/Tank';
 import { tankWallCollision } from './collision/TankWallCollision';
 import { bulletWallCollision } from './collision/BulletWallCollision';
+import { log } from 'console';
 
 const SHOOT_COOLDOWN = 1000;
 
 @Injectable()
 export class GameService implements OnModuleInit {
-  private currentMap: number[][] = [];
+  private currentMap: MapCell[][] = [];
 
   private readonly logger = new Logger(GameService.name);
 
@@ -61,24 +62,20 @@ export class GameService implements OnModuleInit {
     this.tankInputBuffer[id] = [];
     this.bulletInputBuffer[id] = [];
 
-    // Tìm spawn point
-    const spawnPoints: { r: number; c: number }[] = [];
-    for (let r = 0; r < MAP_ROWS; r++) {
-      for (let c = 0; c < MAP_COLS; c++) {
-        if (this.currentMap[r][c] === 9) spawnPoints.push({ r, c });
-      }
-    }
+    
     const spawn =
-      spawnPoints.length > 0
-        ? spawnPoints[Math.floor(Math.random() * spawnPoints.length)]
-        : { r: 1, c: 1 };
+      SPAWNPOINTS.length > 0
+        ? SPAWNPOINTS[Math.floor(Math.random() * SPAWNPOINTS.length)]
+        : { r: 6, c: 6 };
+
+    this.logger.log(`Spawning player ${id} at (${spawn.r}, ${spawn.c})`);
 
     this.tankState.tankStates[id] = {
       id: id,
-      // x: spawn.c * TILE_SIZE + TILE_SIZE / 2,
-      // y: spawn.r * TILE_SIZE + TILE_SIZE / 2,
-      x: 5 * TILE_SIZE,
-      y: 5 * TILE_SIZE,
+       x: spawn.c * TILE_SIZE + TILE_SIZE / 2,
+       y: spawn.r * TILE_SIZE + TILE_SIZE / 2,
+      // x: 5 * TILE_SIZE,
+      // y: 5 * TILE_SIZE,
       degree: Math.floor(Math.random() * 360),
       health: 100,
       maxHealth: 100,
@@ -87,8 +84,10 @@ export class GameService implements OnModuleInit {
       radius: 86 / 2,
       lastShootTimestamp: 0,
     };
+
     this.bulletState.bulletStates[id] = {};
     console.log(`Player ${id} joined.`);
+    console.log(`Initial Tank State:`, this.tankState.tankStates[id]);
 
     // Gửi Map ngay cho người mới
     if (this.server) {
@@ -112,13 +111,6 @@ export class GameService implements OnModuleInit {
     const bullet = this.bulletState.bulletStates[id];
     if (!player) return;
 
-    // // Kiểm tra thời gian bắn
-    // const now = Date.now();
-    // const timeSinceLastShot = now - player.lastShootTimestamp;
-    // const SHOOT_COOLDOWN = 1000;
-    // if (timeSinceLastShot < SHOOT_COOLDOWN) return; // Chưa đủ thời gian để bắn
-    // player.lastShootTimestamp = now;
-
     // 1. Lưu Input bắn vào Buffer
     this.bulletInputBuffer[id].push(bulletInput);
 
@@ -140,75 +132,56 @@ export class GameService implements OnModuleInit {
   // Vòng lặp game - Cập nhật trạng thái và gửi đi
   private gameLoop() {
     // 1. Cập nhật logic game dựa trên input
-    this.updateGameLogic();
-    this.updateBulletLogic();
-
-    // Cập nhật lưới không gian
-    this.gridSpatial.updateGrid(
-      Object.values(this.tankState.tankStates),
-      Object.values(this.bulletState.bulletStates).flatMap((bullets) => Object.values(bullets)),
-    );
-
-    // Kiếm tra va chạm đạn và tank
-    var collisions = bulletVSTankCollision(
-      Object.values(this.tankState.tankStates),
-      Object.values(this.bulletState.bulletStates).flatMap((bullets) => Object.values(bullets)),
-      this.gridSpatial,
-    );
-
-    // Xử lý va chạm
-    collisions.forEach((collision) => {
-      const bulletOwnerId = collision.bulletId.split('_')[1];
-      if (!this.bulletState.bulletStates[bulletOwnerId]) return;
-      const bullet = this.bulletState.bulletStates[bulletOwnerId][collision.bulletId];
-      const tank = this.tankState.tankStates[collision.tankId];
-      if (bullet && tank) {
-        // Giảm máu tank
-        tank.health -= bullet.damage;
-        console.log(`Tank ${tank.id} hit by bullet ${bullet.id}. Health: ${tank.health}`);
-        // Xóa đạn sau khi va chạm
-        delete this.bulletState.bulletStates[bulletOwnerId][collision.bulletId];
-        // Kiểm tra tank bị hạ gục
-        if (tank.health <= 0) {
-          console.log(`Tank ${tank.id} destroyed!`);
-          // Xử lý tank bị hạ gục (ví dụ: đặt lại vị trí, hồi máu, v.v.)
-          tank.health = tank.maxHealth;
-          tank.x = 0;
-          tank.y = 0;
-        }
-      }
-    });
-
-    this.tankState.serverTimestamp = Date.now();
-    this.bulletState.serverTimestamp = Date.now();
-
+    
+    // // Cập nhật lưới không gian
+    // this.gridSpatial.updateGrid(
+      //   Object.values(this.tankState.tankStates),
+      //   Object.values(this.bulletState.bulletStates).flatMap((bullets) => Object.values(bullets)),
+      // );
+      
+      // // Kiếm tra va chạm đạn và tank
+    // var collisions = bulletVSTankCollision(
+      //   Object.values(this.tankState.tankStates),
+      //   Object.values(this.bulletState.bulletStates).flatMap((bullets) => Object.values(bullets)),
+      //   this.gridSpatial,
+      // );
+      
+      // // Xử lý va chạm
+      // collisions.forEach((collision) => {
+        //   const bulletOwnerId = collision.bulletId.split('_')[1];
+    //   if (!this.bulletState.bulletStates[bulletOwnerId]) return;
+    //   const bullet = this.bulletState.bulletStates[bulletOwnerId][collision.bulletId];
+    //   const tank = this.tankState.tankStates[collision.tankId];
+    //   if (bullet && tank) {
+    //     // Giảm máu tank
+    //     tank.health -= bullet.damage;
+    //     console.log(`Tank ${tank.id} hit by bullet ${bullet.id}. Health: ${tank.health}`);
+    //     // Xóa đạn sau khi va chạm
+    //     delete this.bulletState.bulletStates[bulletOwnerId][collision.bulletId];
+    //     // Kiểm tra tank bị hạ gục
+    //     if (tank.health <= 0) {
+      //       console.log(`Tank ${tank.id} destroyed!`);
+    //       // Xử lý tank bị hạ gục (ví dụ: đặt lại vị trí, hồi máu, v.v.)
+    //       tank.health = tank.maxHealth;
+    //       tank.x = 0;
+    //       tank.y = 0;
+    //     }
+    //   }
+    // });
+    
+    
     // 2. Gửi trạng thái game MỚI đến tất cả client
     if (this.server) {
+      this.updateGameLogic();
+      this.updateBulletLogic();
+
       this.tankState.serverTimestamp = Date.now();
       this.bulletState.serverTimestamp = Date.now();
+      // console.log('Emitting tank and bullet states to clients');
+      // console.log('Tank State:', this.tankState);
       this.server.emit('tankState', this.tankState);
       this.server.emit('bulletState', this.bulletState);
     }
-  }
-
-  // --- HELPER: Tìm ô gốc (Root) của vật thể to ---
-  private findRoot(r: number, c: number): { r: number; c: number; val: number } | null {
-    // Quét ngược lên trên và trái để tìm ô gốc (Tower 2x2, Tree 3x3)
-    for (let i = 0; i <= 2; i++) {
-      for (let j = 0; j <= 2; j++) {
-        if (i === 0 && j === 0) continue;
-        const nr = r - i;
-        const nc = c - j;
-        if (nr >= 0 && nc >= 0 && nr < MAP_ROWS && nc < MAP_COLS) {
-          const val = this.currentMap[nr][nc];
-          // Tower (1-4) bán kính tìm 1 ô
-          if (val >= 1 && val <= 4 && i < 2 && j < 2) return { r: nr, c: nc, val };
-          // Tree (10) bán kính tìm 2 ô
-          if (val === 10 && i < 3 && j < 3) return { r: nr, c: nc, val };
-        }
-      }
-    }
-    return null;
   }
 
 
@@ -298,6 +271,7 @@ export class GameService implements OnModuleInit {
 
   private updateGameLogic() {
     const SPEED = 4;
+   
     for (const pid in this.tankInputBuffer) {
       const tank = this.tankState.tankStates[pid];
       if (!tank) continue;
@@ -351,7 +325,7 @@ export class GameService implements OnModuleInit {
         // giới hạn va chạm giữa các tank
         tankCollision(this.tankState.tankStates, tank);
 
-        tankWallCollision(this.currentMap, tank, TILE_SIZE);
+        tankWallCollision(this.currentMap, tank);
 
         // Xử lý bắn
         const now = Date.now();
@@ -371,7 +345,7 @@ export class GameService implements OnModuleInit {
               width: 32,
               height: 36,
               degree: tank.degree,
-              speed: 2,
+              speed: 10,
               damage: 10,
             });
           }

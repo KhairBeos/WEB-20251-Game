@@ -44,12 +44,9 @@ export const tankUpdatePosistion = (
       tankGunAnimationState.current[playerId].isFiring = true;
     }
 
-
-    
-
     // Gửi trạng thái đầu vào của người chơi lên server
     if(socket){
-      //console.log("Sending input:", tankInput);
+     
       socket.emit('tankInput', tankInput);
     }
 
