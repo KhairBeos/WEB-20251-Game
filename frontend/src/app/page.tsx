@@ -19,3 +19,24 @@ export default function LoginPage() {
   const [volume, setVolume] = useState(50);
   const [skinIndex, setSkinIndex] = useState(0);
   const router = useRouter(); 
+
+  const handlePlay = () => {
+    if (!username.trim()) {
+      alert("🌱 Đừng quên nhập tên nhé!");
+      return;
+    }
+    const selectedSkin = SKINS[skinIndex].id;
+    router.push(
+      `/game?username=${encodeURIComponent(username)}&skin=${selectedSkin}`
+    );
+  };
+
+  const nextSkin = () => {
+    setSkinIndex((prev) => (prev + 1) % SKINS.length);
+  };
+
+  const prevSkin = () => {
+    setSkinIndex((prev) => (prev - 1 + SKINS.length) % SKINS.length);
+  };
+
+  const currentSkin = SKINS[skinIndex];
