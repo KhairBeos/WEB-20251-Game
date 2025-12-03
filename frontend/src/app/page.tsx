@@ -166,4 +166,18 @@ return (
               onMouseOut={(e) =>
                 (e.currentTarget.style.transform = "translateY(0)")
               }
+    VÀO GAME NGAY 🚀
+            </button>
+          </div>
+        </div>
 
+        <div style={styles.menuContainer}>
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() =>
+                setActiveMenu(activeMenu === "settings" ? null : "settings")
+              }
+              style={styles.iconButton(activeMenu === "settings")}
+            >
+              ⚙️ Cài đặt
+            </button>
