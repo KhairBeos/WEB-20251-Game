@@ -40,3 +40,45 @@ export default function LoginPage() {
   };
 
   const currentSkin = SKINS[skinIndex];
+return (
+    <>
+      <style jsx global>{`
+        @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap");
+        * {
+          box-sizing: border-box;
+        }
+        body {
+          margin: 0;
+          overflow: hidden;
+        }
+
+        @keyframes float-bg {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+        @keyframes popIn {
+          0% {
+            transform: scale(0.9);
+            opacity: 0;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        @keyframes tank-bounce {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-5px);
+          }
+        }
