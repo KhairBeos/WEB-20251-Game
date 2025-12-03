@@ -181,3 +181,70 @@ return (
             >
               ⚙️ Cài đặt
             </button>
+      {activeMenu === "settings" && (
+              <div style={styles.popup}>
+                <h4 style={styles.popupTitle}>Âm lượng</h4>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                >
+                  <span>🔊</span>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    value={volume}
+                    onChange={(e) => setVolume(Number(e.target.value))}
+                    style={styles.rangeInput}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div style={{ position: "relative" }}>
+            <button
+              onClick={() =>
+                setActiveMenu(activeMenu === "keyboard" ? null : "keyboard")
+              }
+              style={styles.iconButton(activeMenu === "keyboard")}
+            >
+              ⌨️ Điều khiển
+            </button>
+            {activeMenu === "keyboard" && (
+              <div style={styles.popup}>
+                <h4 style={styles.popupTitle}>Bàn phím</h4>
+                <div style={styles.keyGrid}>
+                  <div
+                    style={{
+                      gridColumn: "2",
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <KeyCap label="W" />
+                  </div>
+                  <div
+                    style={{
+                      gridColumn: "1/4",
+                      display: "flex",
+                      gap: "0.5rem",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <KeyCap label="A" />
+                    <KeyCap label="S" />
+                    <KeyCap label="D" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+const KeyCap = ({ label }: { label: string }) => (
+  <div style={styles.keyCap}>{label}</div>
+);
