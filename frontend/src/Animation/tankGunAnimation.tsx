@@ -2,6 +2,7 @@ import { RefObject } from "react";
 import { KeyMap } from "../Model/KeyMap";
 import { TankState } from "../Model/Tank";
 import { TankGunAnimationState } from "../Model/TankGun";
+import { BUSH_SELF_ALPHA } from "../GlobalSetting";
 
 export const tankGunAnimation = (
   ctx: CanvasRenderingContext2D,
@@ -9,6 +10,7 @@ export const tankGunAnimation = (
   tankGunAnimationState: RefObject<TankGunAnimationState>,
   keysPressed: RefObject<KeyMap>,
   frames: RefObject<HTMLImageElement[]>,
+  viewerId?: string,
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
@@ -85,8 +87,12 @@ export const tankGunAnimation = (
       const destWidth = p.width;
       const destHeight = p.height;
 
-      //console.log(img,destX,destY,destWidth,destHeight)
+      // Áp dụng mờ cho chính mình khi đang ở trong bụi
+      const isSelf = viewerId && playerId === viewerId;
+      const shouldFadeSelf = isSelf && p?.inBush;
+      if (shouldFadeSelf) ctx.globalAlpha = BUSH_SELF_ALPHA;
       ctx.drawImage(img, destX, destY, destWidth, destHeight);
+      if (shouldFadeSelf) ctx.globalAlpha = 1;
 
       ctx.restore();
     }

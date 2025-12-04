@@ -1,5 +1,5 @@
 export interface Tank {
-  id:string;
+  id: string;
   x: number;
   y: number;
   degree: number;
@@ -9,6 +9,9 @@ export interface Tank {
   maxHealth: number;
   radius: number;
   lastShootTimestamp: number;
+  inBush?: boolean;
+  bushRootR?: number;
+  bushRootC?: number;
 }
 
 export interface TankInput {

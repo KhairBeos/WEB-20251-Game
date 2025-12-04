@@ -1,4 +1,4 @@
-import { MapCell, TILE_SIZE } from 'src/Model/MapData';
+import { MapCell, TILE_SIZE, MAP_ROWS, MAP_COLS } from 'src/websockets/model/MapData';
 import { Tank } from '../model/Tank';
 
 export function tankWallCollision(map: MapCell[][], tank: Tank) {
@@ -14,8 +14,24 @@ export function tankWallCollision(map: MapCell[][], tank: Tank) {
       if (row < 0 || row >= map.length || col < 0 || col >= map[0].length) {
         continue; // Bỏ qua các ô ngoài bản đồ
       }
-      // Kiểm tra nếu ô hiện tại là tường (giá trị > 0)
-      if (map[row][col].val > 0) {
+      const cell = map[row][col];
+
+      // Xác định ô gốc của vật thể (nếu là thân 99, tra ngược về gốc)
+      const rootR = cell.val === 99 ? cell.root_r : row;
+      const rootC = cell.val === 99 ? cell.root_c : col;
+      if (rootR < 0 || rootR >= MAP_ROWS || rootC < 0 || rootC >= MAP_COLS) {
+        continue;
+      }
+      const root = map[rootR][rootC];
+      const val = root.val;
+
+      // Bỏ qua vật thể không va chạm: đất (0), spawn (9), bụi (11..14)
+      if (val === 0 || val === 9 || (val >= 11 && val <= 14)) {
+        continue;
+      }
+
+      // Các vật thể còn lại coi là vật cản: tường/tower (1..4), cây viền (10)
+      if (val > 0) {
         // Tính toán vị trí của ô
         const tileX = col * TILE_SIZE + TILE_SIZE / 2;
         const tileY = row * TILE_SIZE + TILE_SIZE / 2;

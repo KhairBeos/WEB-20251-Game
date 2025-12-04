@@ -1,9 +1,10 @@
 import { RefObject } from "react";
+import { BUSH_SELF_ALPHA } from "../GlobalSetting";
 import { MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
 
 
 // --- 4. HÀM VẼ MAP ---
-  const drawMap = (
+    const drawMap = (
     camX:number,
     camY:number,
     dynamicMap: RefObject<MapCell[][]>,
@@ -11,7 +12,10 @@ import { MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
     groundImg: RefObject<HTMLImageElement[]>,
     treeImg: RefObject<HTMLImageElement[]>,
     towerImg: RefObject<HTMLImageElement[]>,
-    ctx: CanvasRenderingContext2D) => {
+    bushImg: RefObject<HTMLImageElement[]>,
+        ctx: CanvasRenderingContext2D,
+        myBushRoot?: { r: number; c: number }
+    ) => {
    
     if (dynamicMap.current.length === 0) return;
     const map = dynamicMap.current
@@ -22,6 +26,10 @@ import { MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
         tow3: towerImg.current[1],
         tow2: towerImg.current[2],
         tow1: towerImg.current[3],
+        bush1: bushImg.current?.[0],
+        bush2: bushImg.current?.[1],
+        bush3: bushImg.current?.[2],
+        bush4: bushImg.current?.[3],
 
     }
     const DEBUG_MODE = false; // Bật tắt debug hitbox
@@ -30,9 +38,10 @@ import { MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
 
     // Tính toán ô bắt đầu và kết thúc dựa trên vị trí camera và kích thước viewport
     var startCol = Math.floor(camX / TILE);
-    var endCol = Math.min(MAP_COLS - 1, Math.floor((camX + viewport.current.w) / TILE));
+    // Trừ 1px trước khi chia TILE để tránh mất cột/ hàng biên khi đúng ranh giới
+    var endCol = Math.min(MAP_COLS - 1, Math.floor((camX + viewport.current.w - 1) / TILE));
     var startRow = Math.floor(camY / TILE);
-    var endRow =  Math.min(MAP_ROWS - 1, Math.floor((camY + viewport.current.h) / TILE));
+    var endRow =  Math.min(MAP_ROWS - 1, Math.floor((camY + viewport.current.h - 1) / TILE));
     // Thêm 2 ô đệm để tránh khoảng trống khi di chuyển
     
     startCol = Math.max(0, startCol - 2);
@@ -75,18 +84,28 @@ import { MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
                     ctx.strokeRect(x, y, 80, 80);
                 }
             }
-            // Vẽ Tree (120x120)
+            // Vẽ Tree viền (40x80 = 1x2 tile)
             else if (val === 10 && imgs.tree) {
-                ctx.drawImage(imgs.tree, x, y, 120, 120);
-
-                // [DEBUG] Vẽ vòng tròn xanh (Circle Hitbox)
+                ctx.drawImage(imgs.tree, x, y, 40, 80);
                 if (DEBUG_MODE) {
-                    ctx.strokeStyle = "#00ff00"; 
+                    ctx.strokeStyle = "#00ff00";
                     ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    // Tâm cây: x + 1.5 ô (40*1.5 = 60)
-                    ctx.arc(x + 60, y + 60, 50, 0, 2 * Math.PI); 
-                    ctx.stroke();
+                    ctx.strokeRect(x, y, 40, 80);
+                }
+            }
+            // Vẽ Bush (120x80 = 3x2 tile) với 4 biến thể 11..14
+            else if (val >= 11 && val <= 14) {
+                const bushIndex = val - 11; // 0..3
+                const bushArray = [imgs.bush1, imgs.bush2, imgs.bush3, imgs.bush4];
+                const img = bushArray[bushIndex];
+                if (img) {
+                    // Bụi luôn vẽ bình thường; không mờ theo người chơi
+                    ctx.drawImage(img, x, y, 120, 80);
+                }
+                if (DEBUG_MODE) {
+                    ctx.strokeStyle = "#00ccff";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x, y, 120, 80);
                 }
             }
             

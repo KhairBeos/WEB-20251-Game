@@ -1,0 +1,30 @@
+<svg width="160" height="120" viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="f3" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#f3)">
+    <!-- Tán lá nền -->
+    <circle cx="50" cy="70" r="35" fill="#186A3B"/>
+    <circle cx="110" cy="70" r="35" fill="#186A3B"/>
+    <circle cx="80" cy="50" r="40" fill="#186A3B"/>
+    <ellipse cx="80" cy="80" rx="50" ry="30" fill="#186A3B"/>
+
+    <!-- Tán lá sáng -->
+    <circle cx="80" cy="50" r="32" fill="#239B56"/>
+    <circle cx="50" cy="70" r="25" fill="#28B463"/>
+    <circle cx="110" cy="70" r="25" fill="#28B463"/>
+  </g>
+
+  <!-- Quả đỏ -->
+  <g fill="#CB4335" stroke="#922B21" stroke-width="1">
+    <circle cx="65" cy="45" r="5"/>
+    <circle cx="95" cy="50" r="5"/>
+    <circle cx="80" cy="85" r="5"/>
+    <circle cx="40" cy="75" r="4"/>
+    <circle cx="120" cy="75" r="4"/>
+    <circle cx="80" cy="30" r="4"/>
+  </g>
+</svg>

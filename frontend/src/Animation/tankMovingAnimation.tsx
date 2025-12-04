@@ -1,14 +1,15 @@
-import { RefObject, useCallback } from "react";
+import { RefObject } from "react";
 import { KeyMap } from "../Model/KeyMap";
-import { Tank, TankAnimationState, TankState } from "../Model/Tank";
-import { CANVAS_WIDTH, CANVAS_HEIGHT, ANIMATION_SPEED } from "../GlobalSetting"; // Chuyển khung hình sau mỗi X frame game (Tốc độ chuyển động: 60fps / 6 = 10 khung hình/giây)
+import { TankAnimationState, TankState } from "../Model/Tank";
+import { ANIMATION_SPEED, BUSH_SELF_ALPHA } from "../GlobalSetting"; // Chuyển khung hình sau mỗi X frame game (Tốc độ chuyển động: 60fps / 6 = 10 khung hình/giây)
 
 export const tankMovingAnimation = (
   ctx: CanvasRenderingContext2D,
   tankState: RefObject<TankState>,
   tankAnimationState: RefObject<TankAnimationState>,
   keysPressed: RefObject<KeyMap>,
-  frames: RefObject<HTMLImageElement[]>
+  frames: RefObject<HTMLImageElement[]>,
+  viewerId?: string
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
@@ -19,6 +20,17 @@ export const tankMovingAnimation = (
     // Duyệt qua tất cả các tank trong trạng thái nhận được từ server
     for (const playerId in tankStates) {
       const p = tankStates[playerId];
+
+      // Ẩn tank đối phương nếu họ đang ở trong bụi và mình không ở cùng bụi
+      // Nếu cùng bụi, hiển thị bình thường (không mờ)
+      let sameBush = false;
+      if (viewerId && p?.inBush) {
+        const me = tankStates[viewerId];
+        sameBush = !!(
+          me?.inBush && me?.bushRootR === p?.bushRootR && me?.bushRootC === p?.bushRootC
+        );
+        if (playerId !== viewerId && !sameBush) continue; // không cùng bụi thì ẩn đối thủ
+      }
 
       // Khởi tạo trạng thái hoạt ảnh nếu chưa có
       if (tankAnimationState.current[playerId] === undefined) {
@@ -79,20 +91,23 @@ export const tankMovingAnimation = (
       const destWidth = p.width;
       const destHeight = p.height;
 
-      //console.log(img,destX,destY,destWidth,destHeight)
+      // Áp dụng mờ cho chính mình khi đang ở trong bụi; đối thủ cùng bụi hiển thị bình thường
+      const shouldFade = !!(viewerId && playerId === viewerId && p?.inBush);
+      if (shouldFade) ctx.globalAlpha = BUSH_SELF_ALPHA;
       ctx.drawImage(img, destX, destY, destWidth, destHeight);
+      if (shouldFade) ctx.globalAlpha = 1;
 
-      // vẽ viền hộp tank
-      ctx.strokeStyle = "red";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(destX, destY, destWidth, destHeight);
+      // Loại bỏ viền xanh khi ở trong bụi
 
-      // vẽ hình tròn quanh tank
-      ctx.beginPath();
-      ctx.arc(0, 0, p.radius, 0, 2 * Math.PI);
-      ctx.strokeStyle = "blue";
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      // Debug hitbox (có thể tắt nếu cần)
+      // ctx.strokeStyle = "red";
+      // ctx.lineWidth = 2;
+      // ctx.strokeRect(destX, destY, destWidth, destHeight);
+      // ctx.beginPath();
+      // ctx.arc(0, 0, p.radius, 0, 2 * Math.PI);
+      // ctx.strokeStyle = "blue";
+      // ctx.lineWidth = 2;
+      // ctx.stroke();
     
 
       ctx.restore();
