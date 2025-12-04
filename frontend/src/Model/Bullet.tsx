@@ -31,24 +31,22 @@ export interface Bullet {
   width: number;
   height: number;
   damage: number;
+  ownerId: string;
 }
 
 export interface BulletState {
   serverTimestamp: number;
   bulletStates: {
-    [playerId: string]: {
       // Key là bulletId (ID duy nhất của viên đạn)
       [bulletId: string]: Bullet;
-    };
   };
 }
 
 export interface BulletAnimationState {
-  [playerId: string]: {
-    // Key là bulletId (ID duy nhất của viên đạn)
+ 
     [bulletId: string]: {
       frameIndex: number;
       frameCounter: number;
     };
-  };
+  
 }

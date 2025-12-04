@@ -1,31 +1,27 @@
 import { Tank } from "../model/Tank";
 
-export function tankCollision(tankStates: { [playerId: string]: Tank },tank:Tank) {
-    for (const otherPlayerId in tankStates) {
-        const otherTank = tankStates[otherPlayerId];
-        // Không kiểm tra va chạm với chính nó
-        if (otherTank === tank) continue;
+export function tankCollision(tankStates: { [playerId: string]: Tank }, gridSpatial:any) {
+    for (const id in tankStates) {
+        const tankA = tankStates[id];
+        for (const otherId in tankStates) {
+            if (id === otherId) continue;
+            const tankB = tankStates[otherId];
 
-        // Kiểm tra va chạm hình tròn với raidus
-        const distX = tank.x - otherTank.x;
-        const distY = tank.y - otherTank.y;
-        
-        const distance = Math.sqrt(distX * distX + distY * distY);
-        const minDistance = tank.radius + otherTank.radius;
+            const dx = tankB.x - tankA.x;
+            const dy = tankB.y - tankA.y;
+            const distance =  Math.max(Math.sqrt(dx * dx + dy * dy),0.1);
+            const minDistance = tankA.radius + tankB.radius;
 
-        if(distance === 0) {
-            tank.x += tank.radius;
-            tank.y += tank.radius;
-            continue;
+            // Tính lực đẩy 2 tank ra xa nhau nếu chúng chồng lấn
+            if (distance < minDistance) {
+                const overlap = minDistance - distance;
+                const adjustX = (dx / distance) * (overlap / 2);
+                const adjustY = (dy / distance) * (overlap / 2);
+                tankA.x -= adjustX;
+                tankA.y -= adjustY;
+                tankB.x += adjustX;
+                tankB.y += adjustY;
+            }
         }
-
-        if (distance < minDistance) {
-            // Va chạm xảy ra, tính toán lại vị trí của tank để tránh chồng lấn
-            const overlap = minDistance - distance;
-            const adjustX = (distX / distance) * overlap;
-            const adjustY = (distY / distance) * overlap;
-            tank.x += adjustX;
-            tank.y += adjustY;
-        }   
     }
 }

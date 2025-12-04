@@ -40,4 +40,36 @@ export class GridSpatial {
             this.grid[key].bullets.push(bullet);
         });
     }
+
+    getTanksNear(x: number, y: number): Tank[] {
+        const key = this.getCellKey(x, y);
+
+        // Lấy tất cả các tank trong ô lưới hiện tại và các ô lân cận
+        const nearbyTanks: Tank[] = [];
+        const [gridX, gridY] = key.split('_').map(Number);
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                const neighborKey = `${gridX + dx}_${gridY + dy}`;
+                if (this.grid[neighborKey]) {
+                    nearbyTanks.push(...this.grid[neighborKey].tanks);
+                }
+            }
+        }
+        return nearbyTanks;
+    }
+
+    getBulletsNear(x: number, y: number): Bullet[] {
+        const key = this.getCellKey(x, y);
+        const nearbyBullets: Bullet[] = [];
+        const [gridX, gridY] = key.split('_').map(Number);
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                const neighborKey = `${gridX + dx}_${gridY + dy}`;
+                if (this.grid[neighborKey]) {
+                    nearbyBullets.push(...this.grid[neighborKey].bullets);
+                }
+            }   
+        }
+        return nearbyBullets;
+    }
 }

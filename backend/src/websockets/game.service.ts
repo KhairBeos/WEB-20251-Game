@@ -3,17 +3,14 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Server } from 'socket.io';
 
 // Import MapData nội bộ (Copy file MapData vào backend/src/Model/MapData.ts trước nhé)
-import { INITIAL_MAP, MAP_ROWS, MAP_COLS, TILE_SIZE, MapCell, SPAWNPOINTS } from '../Model/MapData';
-import { borderCollision } from './collision/BorderCollision';
-import { tankCollision } from './collision/TankCollision';
-import { GridSpatial } from './utils/GridSpartial';
+import { INITIAL_MAP, MapCell, SPAWNPOINTS, TILE_SIZE } from '../Model/MapData';
 import { bulletVSTankCollision } from './collision/BulletVSTankCollision';
-import { now } from 'mongoose';
-import { BulletState, BulletInputBuffer, BulletInput } from './model/Bullet';
-import { TankState, TankInput, TankInputBuffer } from './model/Tank';
+import { tankCollision } from './collision/TankCollision';
 import { tankWallCollision } from './collision/TankWallCollision';
+import { BulletInput, BulletInputBuffer, BulletState } from './model/Bullet';
+import { TankInput, TankInputBuffer, TankState } from './model/Tank';
+import { GridSpatial } from './utils/GridSpartial';
 import { bulletWallCollision } from './collision/BulletWallCollision';
-import { log } from 'console';
 
 const SHOOT_COOLDOWN = 1000;
 
@@ -85,7 +82,6 @@ export class GameService implements OnModuleInit {
       lastShootTimestamp: 0,
     };
 
-    this.bulletState.bulletStates[id] = {};
     console.log(`Player ${id} joined.`);
     console.log(`Initial Tank State:`, this.tankState.tankStates[id]);
 
@@ -105,10 +101,11 @@ export class GameService implements OnModuleInit {
     delete this.tankState.tankStates[id];
   }
 
+  
   handleBulletFire(id: string, bulletInput: BulletInput) {
     // kiểm tra người chơi tồn tại
     const player = this.tankState.tankStates[id];
-    const bullet = this.bulletState.bulletStates[id];
+    //const bulletId = `b_${Date.now()}_${Math.random()}`;
     if (!player) return;
 
     // 1. Lưu Input bắn vào Buffer
@@ -175,8 +172,19 @@ export class GameService implements OnModuleInit {
       this.updateGameLogic();
       this.updateBulletLogic();
 
+      this.gridSpatial.updateGrid(
+        Object.values(this.tankState.tankStates),
+        Object.values(this.bulletState.bulletStates).flatMap((bullets) => Object.values(bullets)),
+      );
+
+      tankCollision(this.tankState.tankStates, this.gridSpatial);
+      tankWallCollision(this.currentMap, this.tankState.tankStates);
+      bulletWallCollision(this.currentMap,this.bulletState.bulletStates, this.server);
+      bulletVSTankCollision(this.tankState.tankStates, this.bulletState.bulletStates, this.gridSpatial);
+      
       this.tankState.serverTimestamp = Date.now();
       this.bulletState.serverTimestamp = Date.now();
+
       // console.log('Emitting tank and bullet states to clients');
       // console.log('Tank State:', this.tankState);
       this.server.emit('tankState', this.tankState);
@@ -226,7 +234,7 @@ export class GameService implements OnModuleInit {
 
   private updateBulletLogic() {
     for (const pid in this.bulletInputBuffer) {
-      const bullets = this.bulletState.bulletStates[pid];
+      const bullets = this.bulletState.bulletStates;
       if (!bullets) continue;
       let inputs = this.bulletInputBuffer[pid];
       const now = Date.now();
@@ -235,6 +243,7 @@ export class GameService implements OnModuleInit {
       // Tạo đạn
       for (const i of inputs) {
         const bid = `b_${pid}_${i.clientTimestamp}_${Math.random()}`;
+        console.log(`Creating bullet ${bid} for player ${pid}`);
         bullets[bid] = {
           id: bid,
           ownerId: pid,
@@ -249,22 +258,11 @@ export class GameService implements OnModuleInit {
       }
       this.bulletInputBuffer[pid] = [];
 
-      var removeBulletIds: string[] = [];
       // Update đạn
       for (const bid in bullets) {
         const b = bullets[bid];
         b.x += b.speed * Math.sin((b.degree * Math.PI) / 180);
         b.y -= b.speed * Math.cos((b.degree * Math.PI) / 180);
-
-        let isCollision = bulletWallCollision(this.currentMap, b, this.server);
-        if (isCollision) {
-          removeBulletIds.push(bid);
-          continue;
-        }
-      }
-      // Xóa đạn va chạm
-      for (const bid of removeBulletIds) {
-        delete bullets[bid];
       }
     }
   }
@@ -319,14 +317,6 @@ export class GameService implements OnModuleInit {
         tank.y += deltaY;
         tank.degree = newDegree;
 
-        // // giới hạn vị trí trong khung canvas (giả sử canvas 1200x800)
-        // borderCollision(tank, 1200, 800);
-
-        // giới hạn va chạm giữa các tank
-        tankCollision(this.tankState.tankStates, tank);
-
-        tankWallCollision(this.currentMap, tank);
-
         // Xử lý bắn
         const now = Date.now();
         if (input.isFire) {
@@ -347,6 +337,7 @@ export class GameService implements OnModuleInit {
               degree: tank.degree,
               speed: 10,
               damage: 10,
+              ownerId: pid,
             });
           }
         }

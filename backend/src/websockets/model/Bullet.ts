@@ -18,11 +18,12 @@ export interface BulletInput {
   degree: number;
   speed: number;
   damage: number;
+  ownerId: string;
 }
 
 export interface BulletState {
   serverTimestamp: number;
-  bulletStates: { [playerId: string]: { [bulletId: string]: Bullet } };
+  bulletStates: { [bulletId: string]: Bullet };
 }
 
 export interface BulletInputBuffer {

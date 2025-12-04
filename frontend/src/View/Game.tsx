@@ -81,7 +81,6 @@ function Game() {
       socket.on('tankState', (s) => tankStateRef.current = s);
       socket.on('bulletState', (s) => bulletStateRef.current = s);
 
-      
       // Nhận Map ban đầu
       socket.on('mapData', ({ map }) => dynamicMap.current = map);
       
