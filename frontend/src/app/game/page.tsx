@@ -9,7 +9,7 @@ const Game = dynamic(() => import("../../View/Game"), {
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-900 p-4">
+    <main className="flex h-screen w-screen items-center justify-center bg-gray-900 overflow-hidden">
       <Game /> 
     </main>
   );

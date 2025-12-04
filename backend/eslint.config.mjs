@@ -32,6 +32,8 @@ export default tseslint.config(
     },
 
     rules: {
+      'prettier/prettier': 'warn',
+
       '@typescript-eslint/no-unused-vars': 'warn',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',

@@ -1,5 +1,5 @@
 export interface Bullet {
-  id:string;
+  id: string;
   x: number;
   y: number;
   width: number;

@@ -1,6 +1,6 @@
-import { Bullet } from "../model/Bullet";
-import { Tank } from "../model/Tank";
-import { GridSpatial } from "../utils/GridSpartial";
+import { Bullet } from '../model/Bullet';
+import { Tank } from '../model/Tank';
+import { GridSpatial } from '../utils/GridSpartial';
 
 export function bulletVSTankCollision(tankStates: { [playerId: string]: Tank } , bulletState: { [playerId: string]: Bullet }, grid: GridSpatial) {
     for (const bid in bulletState) {

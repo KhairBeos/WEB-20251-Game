@@ -9,7 +9,6 @@ const compat = new FlatCompat({
   baseDirectory: __dirname,
 });
 
-// Import trực tiếp plugin Prettier
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 
 const eslintConfig = [
@@ -26,9 +25,9 @@ const eslintConfig = [
       'node_modules/**',
     ],
     rules: {
-      'prettier/prettier': 'warn', 
+      'prettier/prettier': 'warn',
       '@typescript-eslint/no-unused-vars': 'warn',
-      'react/no-unescaped-entities': 'off', 
+      'react/no-unescaped-entities': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },

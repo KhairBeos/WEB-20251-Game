@@ -1,4 +1,4 @@
-import { Tank } from "../model/Tank";
+import { Tank } from '../model/Tank';
 
 export function tankCollision(tankStates: { [playerId: string]: Tank }, gridSpatial:any) {
     for (const id in tankStates) {

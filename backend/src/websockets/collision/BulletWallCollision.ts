@@ -1,24 +1,25 @@
-import { TILE_SIZE, MAP_ROWS, MAP_COLS, MapCell } from 'src/Model/MapData';
+import { TILE_SIZE, MAP_ROWS, MAP_COLS, MapCell } from 'src/websockets/model/MapData';
 import { Bullet } from '../model/Bullet';
-import { Tank } from '../model/Tank';
 
-// --- HELPER: Check va chạm HÌNH TRÒN (Cho Cây) ---
+// Trước đây dùng hitbox tròn cho cây 3x3; nay cây (10) và bụi (11..14)
+// là vật cản chữ nhật (1x2 và 3x2). Đạn chạm là dừng (không trừ máu).
+
 function checkCircleHit(
-  objX: number,
-  objY: number,
-  objRadius: number,
-  treeRootR: number,
-  treeRootC: number,
+  bulletX: number,
+  bulletY: number,
+  bulletRadius: number,
+  cellR: number,
+  cellC: number,
 ): boolean {
-  // Tâm cây nằm giữa vùng 3x3 (1.5 ô từ gốc)
-  const treeCenterX = treeRootC * TILE_SIZE + 1.5 * TILE_SIZE;
-  const treeCenterY = treeRootR * TILE_SIZE + 1.5 * TILE_SIZE;
-  const treeRadius = 50; // Bán kính cây (nhỏ hơn 60 để dễ đi)
-
-  const dx = objX - treeCenterX;
-  const dy = objY - treeCenterY;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  return distance < treeRadius + objRadius;
+  // Tính toán vị trí của ô
+  const tileX = cellC * TILE_SIZE + TILE_SIZE / 2;
+  const tileY = cellR * TILE_SIZE + TILE_SIZE / 2;
+  // Tính khoảng cách từ tâm đạn đến tâm ô
+  const distX = bulletX - tileX;
+  const distY = bulletY - tileY;
+  const distance = Math.sqrt(distX * distX + distY * distY);
+  const minDistance = bulletRadius + TILE_SIZE / 2;
+  return distance < minDistance;
 }
 
 export function bulletWallCollision(
@@ -71,15 +72,15 @@ export function bulletWallCollision(
       }
       removedBullets.push(bid);
     }
-    // 2. Bắn trúng Cây (10)
-    else if (tile.val === 10) {
-      if (checkCircleHit(bullet.x, bullet.y, 5, rootR, rootC)) {
-        removedBullets.push(bid);
-      }
+    // 2. Cây viền (10) chặn đạn; BỤI (11..14) KHÔNG chặn đạn
+    else if (root.val === 10) {
+      removedBullets.push(bid); // Đạn dừng lại
+    } else if (root.val >= 11 && root.val <= 14) {
+      // Đạn bay qua bụi, không làm gì
     }
-  }
-  // Xóa các viên đạn đã va chạm
-  for (const bid of removedBullets) {
-    delete bulletState[bid];
+    // Xóa các viên đạn đã va chạm
+    for (const bid of removedBullets) {
+      delete bulletState[bid];
+    }
   }
 }
