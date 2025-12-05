@@ -6,7 +6,9 @@ export function bulletVSTankCollision(tankStates: { [playerId: string]: Tank } ,
     for (const bid in bulletState) {
         const bullet = bulletState[bid];
         const nearbyTanks = grid.getTanksNear(bullet.x, bullet.y);
+        console.log(`Bullet ${bid} is near tanks:`, nearbyTanks.map(t => t.id));
         for (const tank of nearbyTanks) {
+            console.log(`Checking collision between bullet ${bid} and tank ${tank.id}`);
             // Bỏ qua nếu tank là chủ sở hữu viên đạn
             if (tank.id === bullet.ownerId) continue;
             const dx = tank.x - bullet.x;

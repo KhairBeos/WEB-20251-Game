@@ -26,9 +26,19 @@ export class TankStateManager {
       },
     ) => void,
   ) {
+    // Xoa tanks hết máu
+    for(const pid in tankState.tankStates) {
+      const tank = tankState.tankStates[pid];
+      if(tank.health <= 0) {
+        delete tankState.tankStates[pid];
+      }
+    }
+
+    // Xử lý input
     for (const pid in tankInputBuffer) {
       const tank = tankState.tankStates[pid];
       if (!tank) continue;
+
       let inputs = tankInputBuffer[pid];
       inputs = inputs.filter((i) => Date.now() - i.clientTimestamp <= 100);
 
@@ -104,6 +114,7 @@ export class TankStateManager {
           const timeSinceLastShot = now - tank.lastShootTimestamp;
           if (timeSinceLastShot >= SHOOT_COOLDOWN) {
             tank.lastShootTimestamp = now;
+            console.log(`Tank ${pid} fired a bullet.`);
             handleBulletFire(pid, {
               clientTimestamp: now,
               startX: tank.x + (tank.width / 2) * Math.sin(angleInRadians),

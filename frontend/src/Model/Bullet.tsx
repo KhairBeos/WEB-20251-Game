@@ -43,7 +43,6 @@ export interface BulletState {
 }
 
 export interface BulletAnimationState {
- 
     [bulletId: string]: {
       frameIndex: number;
       frameCounter: number;

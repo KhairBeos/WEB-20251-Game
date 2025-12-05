@@ -7,15 +7,17 @@ export class BulletStateManager {
     bulletState: BulletState,
     bulletInputBuffer: BulletInputBuffer,
   ) {
+    
+    const bullets = bulletState.bulletStates;
+
     for (const pid in bulletInputBuffer) {
-      const bullets = bulletState.bulletStates[pid];
-      if (!bullets) continue;
       let inputs = bulletInputBuffer[pid];
       const now = Date.now();
       inputs = inputs.filter((i) => now - i.clientTimestamp <= 100);
 
       // Tạo đạn
       for (const i of inputs) {
+        console.log(`Creating bullet for player ${pid} with input:`, i);
         const bid = `b_${pid}_${i.clientTimestamp}_${Math.random()}`;
         bullets[bid] = {
           id: bid,
@@ -36,7 +38,6 @@ export class BulletStateManager {
         b.x += b.speed * Math.sin((b.degree * Math.PI) / 180);
         b.y -= b.speed * Math.cos((b.degree * Math.PI) / 180);
       }
-      
     }
   }
 }

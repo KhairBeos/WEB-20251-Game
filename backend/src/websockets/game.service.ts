@@ -116,6 +116,7 @@ export class GameService implements OnModuleInit {
 
   
   handleBulletFire(id: string, bulletInput: BulletInput) {
+    console.log(`Received bullet fire input from player ${id}:`, bulletInput);
     // kiểm tra người chơi tồn tại
     const player = this.tankState.tankStates[id];
     //const bulletId = `b_${Date.now()}_${Math.random()}`;
@@ -146,8 +147,10 @@ export class GameService implements OnModuleInit {
       this.tankManager.update(
         this.tankState,
         this.tankInputBuffer,
-        (pid, payload) => this.handleBulletFire(pid, payload),
+        this.handleBulletFire.bind(this),
       );
+      
+      
       this.bulletManager.update(
         this.bulletState,
         this.bulletInputBuffer,

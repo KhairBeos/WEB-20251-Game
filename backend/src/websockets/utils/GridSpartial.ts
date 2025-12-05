@@ -23,13 +23,11 @@ export class GridSpatial {
       this.grid[key].bullets = [];
     });
 
-    // Thêm Bullets
-    bullets.forEach((bullet) => {
-      // Đối với bullets, bạn nên kiểm tra tất cả các ô nó đi qua trong frame đó
-      // Nhưng để đơn giản, ta chỉ dùng vị trí tâm (x, y)
-      const key = this.getCellKey(bullet.x, bullet.y);
+    // Thêm Tanks
+    tanks.forEach((tank) => {
+      const key = this.getCellKey(tank.x, tank.y);
       if (!this.grid[key]) this.grid[key] = { tanks: [], bullets: [] };
-      this.grid[key].bullets.push(bullet);
+      this.grid[key].tanks.push(tank);
     });
 
     // Thêm Bullets
