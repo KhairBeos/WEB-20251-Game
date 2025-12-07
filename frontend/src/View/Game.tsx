@@ -260,7 +260,7 @@ function Game() {
     tankMovingAnimationCB(ctx, tankStateRef, tankAnimationState, keysPressed, tankBodyImageRef);
     tankGunAnimationCB(ctx, tankStateRef, tankGunAnimationState, keysPressed, tankGunImageRef);
     tankBulletAnimationCB(ctx, bulletStateRef, bulletAnimationState, bulletImageRef);
-    tankHealthAnimation(ctx, tankStateRef, keysPressed);
+    tankHealthAnimation(ctx, tankStateRef, socket?.id);
 
     ctx.restore();
 
