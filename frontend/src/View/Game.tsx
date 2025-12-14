@@ -22,11 +22,18 @@ import useLoadBush from "../Hook/useLoadBush";
 import drawMap from "../Animation/drawMap";
 import useLoadGround from "../Hook/useLoadGround";
 import useLoadTower from "../Hook/useLoadTower";
+import { useSearchParams } from "next/navigation";
 
 // --- BẬT DEBUG MODE: True để hiện khung va chạm ---
 const DEBUG_MODE = true; 
 
 function Game() {
+  // Lấy ra object chứa các query parameter
+  const searchParams = new URLSearchParams(window.location.search);
+  // Lấy giá trị của 'name'
+  const playerName = searchParams.get('name'); // Giá trị đã được tự động giải mã (decode)
+  console.log("Player Name:", playerName);
+
   // --- STATE GAME ---
   const tankStateRef = useRef<TankState>({ serverTimestamp: 0, tankStates: {} });
   const bulletStateRef = useRef<BulletState>({ serverTimestamp: 0, bulletStates: {} });
@@ -207,7 +214,6 @@ function Game() {
     });
   }, []);
 
-  
 
   // --- 5. GAME LOOP (ANIMATE) ---
   const animate = useCallback(() => {
@@ -272,6 +278,8 @@ function Game() {
         ctx.fillText(`Tank: ${Math.round(myTank?.x || 0)}, ${Math.round(myTank?.y || 0)}`, 20, 50);
         ctx.fillText(`Cam: ${Math.round(camX)}, ${Math.round(camY)}`, 20, 70);
         ctx.fillText(`Screen: ${viewport.current.w} x ${viewport.current.h}`, 20, 90);
+        // Vẽ score
+        ctx.fillText(`Score: ${myTank?.score || 0}`, 20, 110);
     }
     
     animationFrameId.current = requestAnimationFrame(animate);

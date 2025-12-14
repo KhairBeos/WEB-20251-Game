@@ -80,6 +80,10 @@ export class GameService implements OnModuleInit {
     this.logger.log(`Spawning player ${id} at (${spawn.r}, ${spawn.c})`);
 
     this.tankState.tankStates[id] = {
+      name: 'Anonymous',
+      level: 1,
+      score: 0,
+      speed: 2,
       id: id,
       x: spawn.c * TILE_SIZE + TILE_SIZE / 2,
       y: spawn.r * TILE_SIZE + TILE_SIZE / 2,
@@ -92,7 +96,7 @@ export class GameService implements OnModuleInit {
       height: 86,
       radius: 86 / 2,
       lastShootTimestamp: 0,
-      inBush: "none",
+      inBush: 'none',
     };
 
     console.log(`Player ${id} joined.`);
@@ -114,7 +118,6 @@ export class GameService implements OnModuleInit {
     delete this.tankState.tankStates[id];
   }
 
-  
   handleBulletFire(id: string, bulletInput: BulletInput) {
     console.log(`Received bullet fire input from player ${id}:`, bulletInput);
     // kiểm tra người chơi tồn tại
@@ -149,12 +152,8 @@ export class GameService implements OnModuleInit {
         this.tankInputBuffer,
         this.handleBulletFire.bind(this),
       );
-      
-      
-      this.bulletManager.update(
-        this.bulletState,
-        this.bulletInputBuffer,
-      );
+
+      this.bulletManager.update(this.bulletState, this.bulletInputBuffer, this.tankState);
 
       this.gridSpatial.updateGrid(
         Object.values(this.tankState.tankStates),
@@ -163,9 +162,15 @@ export class GameService implements OnModuleInit {
 
       tankCollision(this.tankState.tankStates, this.gridSpatial);
       tankWallCollision(this.currentMap, this.tankState.tankStates);
-      bulletWallCollision(this.currentMap,this.bulletState.bulletStates, this.server);
-      bulletVSTankCollision(this.tankState.tankStates, this.bulletState.bulletStates, this.gridSpatial);
-      
+      bulletWallCollision(this.currentMap, this.bulletState.bulletStates,this.tankState ,this.server);
+      bulletVSTankCollision(
+        this.tankState.tankStates,
+        this.bulletState.bulletStates,
+        this.gridSpatial,
+      );
+
+      this.gameLogicLoop();
+
       this.tankState.serverTimestamp = Date.now();
       this.bulletState.serverTimestamp = Date.now();
 
@@ -176,47 +181,24 @@ export class GameService implements OnModuleInit {
     }
   }
 
+  private gameLogicLoop() {
+    // Kiểm tra các tank đã chết
+    for (const pid in this.tankState.tankStates) {
+      const tank = this.tankState.tankStates[pid];
+      if (tank.health <= 0) {
+      }
+    }
 
-  
-
-
-      
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  // const nowTs = Date.now();
-  //     this.tankState.serverTimestamp = nowTs;
-  //     this.bulletState.serverTimestamp = nowTs;
-
-  //     // Phát trạng thái tank và đạn theo người xem (ẩn theo bụi) - 60Hz
-  //     const viewers = Object.keys(this.tankState.tankStates);
-  //     for (const viewerId of viewers) {
-  //       const visibleTanks = this.visibilityService.buildVisibleTankStateFor(
-  //         viewerId,
-  //         nowTs,
-  //         this.tankState,
-  //       );
-  //       const visibleBullets = this.visibilityService.buildVisibleBulletStateFor(
-  //         viewerId,
-  //         nowTs,
-  //         this.bulletState,
-  //         this.tankState,
-  //       );
-  //       // Legacy events
-  //       this.server.to(viewerId).emit('tankState', visibleTanks);
-  //       this.server.to(viewerId).emit('bulletState', visibleBullets);
-  //       // Combined packet (optional on client)
-  //       this.server.to(viewerId).emit('state', {
-  //         tankState: visibleTanks,
-  //         bulletState: visibleBullets,
-  //       });
-  //     }
-  //   }
-  // }
+    // Cập nhât level dựa trên điểm số, mỗi 1 cấp độ 10 điểm
+    for (const pid in this.tankState.tankStates) {
+      const tank = this.tankState.tankStates[pid];
+      const newLevel = Math.floor(tank.score / 10) + 1;
+      if (newLevel !== tank.level) {
+        console.log(`Player ${pid} score: ${tank.score}, leveling up from ${tank.level} to ${newLevel}`);
+        tank.level = newLevel;
+        tank.speed = 2 + (newLevel - 1) * 0.2; // Tăng tốc độ theo level
+        console.log(`Player ${pid} leveled up to ${newLevel}`);
+      }
+    }
+  }
 }

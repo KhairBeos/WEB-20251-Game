@@ -1,4 +1,6 @@
 export type Tank = {
+    id: string;
+    name: string;
     x: number, // Vị trí ban đầu X (giữa)
     y: number, // Vị trí ban đầu Y (giữa)
     degree:number // Goc quay
@@ -9,6 +11,9 @@ export type Tank = {
     radius: number,
     maxHealth: number,
     inBush: string,
+    speed: number,
+    score: number,
+    level: number,
 }
 
 export type TankInput = {
@@ -17,7 +22,6 @@ export type TankInput = {
     clientTimestamp: number,
     isFire: boolean;
 }
-
 
 export interface TankState {
   serverTimestamp: number;

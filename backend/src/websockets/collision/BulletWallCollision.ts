@@ -1,5 +1,6 @@
 import { TILE_SIZE, MAP_ROWS, MAP_COLS, MapCell } from 'src/websockets/model/MapData';
 import { Bullet } from '../model/Bullet';
+import { Tank, TankState } from '../model/Tank';
 
 // Trước đây dùng hitbox tròn cho cây 3x3; nay cây (10) và bụi (11..14)
 // là vật cản chữ nhật (1x2 và 3x2). Đạn chạm là dừng (không trừ máu).
@@ -25,6 +26,7 @@ function checkCircleHit(
 export function bulletWallCollision(
   map: MapCell[][],
   bulletState: { [bulletId: string]: Bullet },
+  tankState: TankState,
   server: any,
 ) {
   var removedBullets: string[] = [];
@@ -33,13 +35,15 @@ export function bulletWallCollision(
     // --- XỬ LÝ BẮN TRÚNG MAP ---
     const c = Math.floor(bullet.x / TILE_SIZE);
     const r = Math.floor(bullet.y / TILE_SIZE);
+    console.log(`Bullet ${bid} at (${bullet.x.toFixed(2)}, ${bullet.y.toFixed(2)}) is in tile (${r}, ${c})`);
 
     if (r < 0 || r >= MAP_ROWS || c < 0 || c >= MAP_COLS) {
-      return true; // Đạn ra ngoài bản đồ
+      removedBullets.push(bid); // Đạn bay ra ngoài bản đồ
+      continue;
     }
     let tile = map[r][c];
     if (tile.val === 0) {
-      return false; // Đạn bay qua đất trống
+      continue; // Ô trống, đạn bay tiếp
     }
 
     let root = map[tile.root_r][tile.root_c];
@@ -53,6 +57,8 @@ export function bulletWallCollision(
       const newVal = map[rootR][rootC].val;
 
       if (newVal === 0) {
+        tankState.tankStates[bullet.ownerId].score += 5; // Cộng điểm cho người bắn
+        console.log(`Player ${bullet.ownerId} scored 5 points for destroying a wall. Total score: ${tankState.tankStates[bullet.ownerId].score}`);
         // Phá hủy hoàn toàn: Xóa cả 4 ô (2x2)
         map[rootR][rootC] = { root_r: -1, root_c: -1, val: 0 };
         map[rootR][rootC + 1] = { root_r: -1, root_c: -1, val: 0 };

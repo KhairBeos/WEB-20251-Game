@@ -47,6 +47,21 @@ export const tankHealthAnimation = (
             healthBarHeight
         );
 
+        // Vẽ tên dưới thanh máu
+        ctx.fillStyle = "white";
+        ctx.font = "14px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(p.name, 0, healthBarY + healthBarHeight + 14);
+
+        // Vẽ level bên trái thanh máu
+        ctx.fillStyle = "yellow";
+        ctx.font = "14px Arial";
+        ctx.textAlign = "right";
+        ctx.fillText(`Lv.${p.level}`, healthBarX - 10, healthBarY + healthBarHeight);
+
+        // Vẽ điểm ở góc trái màn hình
+        
+
       ctx.restore();
     }
   };

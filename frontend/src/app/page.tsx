@@ -8,6 +8,6 @@ import GameClient from "../View/GameClient";
 export default function Home() {
  
   return ( 
-        <GameClient />
+        <GameHome />
     );
 }

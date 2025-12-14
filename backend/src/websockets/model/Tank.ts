@@ -1,4 +1,5 @@
 export interface Tank {
+  name: string;
   id: string;
   x: number;
   y: number;
@@ -10,6 +11,9 @@ export interface Tank {
   radius: number;
   lastShootTimestamp: number;
   inBush: string;
+  speed: number;
+  score: number;
+  level: number;
 }
 
 export interface TankInput {

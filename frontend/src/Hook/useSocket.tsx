@@ -18,6 +18,8 @@ export const useSocket = () => {
       const socket = io(SOCKET_URL, {
         // Thêm các options như transports, authentication token nếu cần
         autoConnect: false, // Ngăn kết nối ngay lập tức
+        // query: {
+        //   name : , // Ví dụ thêm tên người chơi ngẫu nhiên
       });
 
       socketRef.current = socket;

@@ -6,9 +6,8 @@ export function bulletVSTankCollision(tankStates: { [playerId: string]: Tank } ,
     for (const bid in bulletState) {
         const bullet = bulletState[bid];
         const nearbyTanks = grid.getTanksNear(bullet.x, bullet.y);
-        console.log(`Bullet ${bid} is near tanks:`, nearbyTanks.map(t => t.id));
         for (const tank of nearbyTanks) {
-            console.log(`Checking collision between bullet ${bid} and tank ${tank.id}`);
+           
             // Bỏ qua nếu tank là chủ sở hữu viên đạn
             if (tank.id === bullet.ownerId) continue;
             const dx = tank.x - bullet.x;
@@ -19,6 +18,10 @@ export function bulletVSTankCollision(tankStates: { [playerId: string]: Tank } ,
                 // Xử lý va chạm: giảm máu tank và loại bỏ viên đạn
                 tankStates[tank.id].health -= bullet.damage;
                 delete bulletState[bid];
+                if(tankStates[tank.id].health < 0) {
+                    tankStates[bullet.ownerId].score += 10; // Cộng điểm cho người bắn
+                }
+
                 break; // Viên đạn đã va chạm, không cần kiểm tra với các tank khác
             }
         }
