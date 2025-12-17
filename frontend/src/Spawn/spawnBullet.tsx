@@ -32,12 +32,12 @@
 //           // 4. SPWAN BULLET (LOGIC MỚI)
 //         const bulletAngleInRadians = p.degree * (Math.PI / 180);
 //         // Tính toán vị trí spawn ngay phía trước nòng súng
-//         const spawnDistance = p.height / 2 + 5; 
+//         const spawnDistance = p.height / 2 + 5;
 
 //         // Sử dụng sin/cos để tìm điểm cách tâm tank một khoảng 'spawnDistance' theo góc 'p.degree'
 //         const startX = p.x + spawnDistance * Math.sin(bulletAngleInRadians);
 //         const startY = p.y - spawnDistance * Math.cos(bulletAngleInRadians);
-        
+
 //         console.log(new TankBullet(startX,startY,p.degree))
 
 //         const newBullet = new TankBullet(startX,startY,p.degree);

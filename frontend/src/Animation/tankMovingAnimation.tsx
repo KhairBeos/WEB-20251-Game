@@ -1,23 +1,24 @@
-import { RefObject, useCallback } from "react";
+import { RefObject } from "react";
 import { KeyMap } from "../Model/KeyMap";
-import { Tank, TankAnimationState, TankState } from "../Model/Tank";
-const PLAYER_SPEED = 5;
-const CANVAS_WIDTH = screen.width;
-const CANVAS_HEIGHT = screen.height;
-const ANIMATION_SPEED = 10; // Chuyển khung hình sau mỗi X frame game (Tốc độ chuyển động: 60fps / 6 = 10 khung hình/giây)
+import { TankAnimationState, TankState } from "../Model/Tank";
+import { ANIMATION_SPEED, BUSH_SELF_ALPHA } from "../GlobalSetting"; // Chuyển khung hình sau mỗi X frame game (Tốc độ chuyển động: 60fps / 6 = 10 khung hình/giây)
 
 export const tankMovingAnimation = (
   ctx: CanvasRenderingContext2D,
   tankState: RefObject<TankState>,
   tankAnimationState: RefObject<TankAnimationState>,
   keysPressed: RefObject<KeyMap>,
-  frames: RefObject<HTMLImageElement[]>
+  frames: RefObject<HTMLImageElement[]>,
+  viewerId?: string
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
     // console.log(tank.current.degree)
     const tankStates = tankState.current.tankStates;
     const serverTimestamp = tankState.current.serverTimestamp;
+
+    if(viewerId == null) return
+    const viewerTank = tankStates[viewerId];
 
     // Duyệt qua tất cả các tank trong trạng thái nhận được từ server
     for (const playerId in tankStates) {
@@ -82,9 +83,37 @@ export const tankMovingAnimation = (
       const destWidth = p.width;
       const destHeight = p.height;
 
-      //console.log(img,destX,destY,destWidth,destHeight)
-      ctx.drawImage(img, destX, destY, destWidth, destHeight);
+      // Nếu tank của mình và đang ở trong bụi, vẽ mờ đi
+      if (playerId === viewerId && p.inBush != "none") {
+        ctx.globalAlpha = BUSH_SELF_ALPHA;
+      }
+      
+      // Nếu không phải tank của mình và tank đó đang ở trong bụi,
+      if (playerId !== viewerId && p.inBush != "none") {
 
+        // Nếu cùng bụi với tank của mình, vẽ mờ đi
+        if (p.inBush == viewerTank.inBush) {
+          ctx.globalAlpha = BUSH_SELF_ALPHA; // Mức độ mờ cho tank khác trong bụi
+        }
+        else {
+          ctx.restore();
+          continue; // Bỏ qua việc vẽ tank này
+        }
+      }
+      ctx.drawImage(img, destX, destY, destWidth, destHeight);
+      
+      // Loại bỏ viền xanh khi ở trong bụi
+
+      // Debug hitbox (có thể tắt nếu cần)
+      // ctx.strokeStyle = "red";
+      // ctx.lineWidth = 2;
+      // ctx.strokeRect(destX, destY, destWidth, destHeight);
+      // ctx.beginPath();
+      // ctx.arc(0, 0, p.radius, 0, 2 * Math.PI);
+      // ctx.strokeStyle = "blue";
+      // ctx.lineWidth = 2;
+      // ctx.stroke();
+    
       ctx.restore();
     }
   };

@@ -2,19 +2,24 @@ import { RefObject } from "react";
 import { KeyMap } from "../Model/KeyMap";
 import { TankState } from "../Model/Tank";
 import { TankGunAnimationState } from "../Model/TankGun";
+import { BUSH_SELF_ALPHA } from "../GlobalSetting";
 
 export const tankGunAnimation = (
   ctx: CanvasRenderingContext2D,
-   tankState: RefObject<TankState>,
+  tankState: RefObject<TankState>,
   tankGunAnimationState: RefObject<TankGunAnimationState>,
   keysPressed: RefObject<KeyMap>,
-  frames: RefObject<HTMLImageElement[]>
+  frames: RefObject<HTMLImageElement[]>,
+  viewerId?: string,
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
     const tankStates = tankState.current.tankStates;
     const serverTimestamp = tankState.current.serverTimestamp;
-   
+
+     if(viewerId == null) return
+    const viewerTank = tankStates[viewerId];
+
     // Duyệt qua tất cả các tank trong trạng thái nhận được từ server
     for (const playerId in tankStates) {
       const p = tankStates[playerId];
@@ -25,26 +30,29 @@ export const tankGunAnimation = (
           frameIndex: 0,
           frameCounter: 0,
           isFiring: false,
+          lastAnimationTime: 0
         };
       }
-
-      if( keysPressed.current["j"] && p.lastShootTimestamp + 1000 < Date.now()) {
-        tankGunAnimationState.current[playerId].isFiring = true;
-        console.log("Set isFiring true for player ", playerId);
-      }
+      
+       if(tankGunAnimationState.current[playerId].isFiring 
+        && tankGunAnimationState.current[playerId].lastAnimationTime > p.lastShootTimestamp 
+        && p.lastShootTimestamp + 1000 > Date.now()) {
+          tankGunAnimationState.current[playerId].isFiring = false;
+        }
       
       const animState = tankGunAnimationState.current[playerId];
       // Nếu nhân vật đang di chuyển, cập nhật hoạt ảnh
       if (animState.isFiring) {
         animState.frameCounter++;
-        console.log(animState.frameIndex, animState.frameCounter);
+        //console.log(animState.frameIndex, animState.frameCounter);
         if (animState.frameCounter >= 5) {
           animState.frameCounter = 0;
           animState.frameIndex++;
           // Ket thuc hoat anh khi ve het frame
-          if( animState.frameIndex === frames.current.length ){
+          if (animState.frameIndex === frames.current.length) {
             animState.frameIndex = 0;
             animState.isFiring = false;
+            animState.lastAnimationTime = Date.now();
           }
         }
       } else {
@@ -81,8 +89,29 @@ export const tankGunAnimation = (
       const destWidth = p.width;
       const destHeight = p.height;
 
-      //console.log(img,destX,destY,destWidth,destHeight)
+      // Nếu tank của mình và đang ở trong bụi, vẽ mờ đi
+      if (playerId === viewerId && p.inBush != "none") {
+        ctx.globalAlpha = BUSH_SELF_ALPHA;
+      }
+
+      // Nếu không phải tank của mình và tank đó đang ở trong bụi, không vẽ lên canvas
+      if (playerId !== viewerId && p.inBush != "none") {
+        // Nếu cùng bụi với tank của mình, vẽ mờ đi
+        if (p.inBush == viewerTank.inBush) {
+          ctx.globalAlpha = BUSH_SELF_ALPHA; // Mức độ mờ cho tank khác trong bụi
+        }
+        else {
+          ctx.restore();
+          continue; // Bỏ qua việc vẽ tank này
+        }
+      }
+
+      
+
+
+
       ctx.drawImage(img, destX, destY, destWidth, destHeight);
+     
 
       ctx.restore();
     }

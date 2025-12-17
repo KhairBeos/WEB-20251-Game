@@ -1,0 +1,122 @@
+// backend/src/Model/MapData.ts
+
+// QUY ƯỚC MÃ SỐ (MATRIX CODE):
+// 0: Đất
+// 4: Tower Full máu (Gốc) - 2x2 tile (80x80)
+// 10: Tree viền (Gốc) - 1x2 tile (40x80)
+// 11..14: Bush (Gốc) - 3x2 tile (120x80) với 4 biến thể
+// 9: Trụ Spawn
+// 99: VẬT CẢN TÀNG HÌNH
+
+export const MAP_ROWS = 80;
+export const MAP_COLS = 80;
+export const TILE_SIZE = 40; // Đơn vị cơ sở
+export type MapCell = {
+  root_r: number;
+  root_c: number;
+  val: number;
+};
+
+// 3. Spawn Point
+export const SPAWNPOINTS = [
+  { r: 6, c: 6 },
+  { r: 6, c: MAP_COLS - 8 },
+  { r: MAP_ROWS - 8, c: 6 },
+  { r: MAP_ROWS - 8, c: MAP_COLS - 8 },
+];
+
+const generateMap = () => {
+  // Tạo ma trận map ban đầu
+  const map: MapCell[][] = [];
+  for (let r = 0; r < MAP_ROWS; r++) {
+    const row: MapCell[] = [];
+    for (let c = 0; c < MAP_COLS; c++) {
+      row.push({ root_r: -1, root_c: -1, val: 0 });
+    }
+    map.push(row);
+  }
+
+  // Hàm hỗ trợ đặt vật thể
+  const placeObject = (r: number, c: number, type: number) => {
+    let sizeW = 1; // theo cột
+    let sizeH = 1; // theo hàng
+    if (type === 4) {
+      sizeW = 2;
+      sizeH = 2;
+    } // Tower 2x2
+    else if (type === 10) {
+      sizeW = 1;
+      sizeH = 2;
+    } // Tree viền 1x2
+    else if (type >= 11 && type <= 14) {
+      sizeW = 3;
+      sizeH = 2;
+    } // Bush 3x2
+
+    if (r + sizeH > MAP_ROWS || c + sizeW > MAP_COLS) return;
+
+    // Check trống
+    for (let i = 0; i < sizeH; i++) {
+      for (let j = 0; j < sizeW; j++) {
+        if (map[r + i][c + j].val !== 0) return;
+      }
+    }
+
+    // Đặt gốc
+    map[r][c] = { root_r: r, root_c: c, val: type };
+    // Đặt các ô con
+    if (sizeW > 1 || sizeH > 1) {
+      for (let i = 0; i < sizeH; i++) {
+        for (let j = 0; j < sizeW; j++) {
+          if (i === 0 && j === 0) continue;
+          map[r + i][c + j] = { root_r: r, root_c: c, val: 99 }; // Thân vật cản tàng hình
+        }
+      }
+    }
+  };
+
+  // 1. Viền cây (Tree 40x80 = 1x2 tile)
+  // Mép trên và dưới: quét theo cột từng 1 tile
+  for (let c = 0; c < MAP_COLS; c += 1) {
+    placeObject(0, c, 10); // Top
+    placeObject(MAP_ROWS - 2, c, 10); // Bottom
+  }
+  // Mép trái và phải: quét theo hàng từng 2 tile (vì cao 2)
+  for (let r = 0; r < MAP_ROWS; r += 2) {
+    placeObject(r, 0, 10); // Left
+    placeObject(r, MAP_COLS - 1, 10); // Right
+  }
+
+  // 2. Mê cung Tower
+  for (let r = 4; r < MAP_ROWS - 4; r += 2) {
+    for (let c = 4; c < MAP_COLS - 4; c += 2) {
+      if (Math.random() < 0.2) {
+        placeObject(r, c, 4);
+      } else if (Math.random() < 0.05) {
+        // Đặt Bush bên trong: chọn ngẫu nhiên 1 trong 4 biến thể 11..14
+        const variant = 11 + Math.floor(Math.random() * 4);
+        placeObject(r, c, variant);
+      }
+    }
+  }
+
+  SPAWNPOINTS.forEach((pos) => {
+    // Dọn dẹp 5x5 quanh spawn
+    for (let i = -2; i <= 3; i++) {
+      for (let j = -2; j <= 3; j++) {
+        if (map[pos.r + i] && map[pos.r + i][pos.c + j] !== undefined)
+          map[pos.r + i][pos.c + j] = {
+            root_r: -1,
+            root_c: -1,
+            val: 0,
+          };
+      }
+    }
+    // Đặt trụ spawn
+    //map[pos.r][pos.c] = { root_r: pos.r, root_c: pos.c, val: 9 };
+  });
+
+  return map;
+};
+
+export const INITIAL_MAP = generateMap();

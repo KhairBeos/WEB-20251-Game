@@ -1,6 +1,3 @@
-import { BulletState } from "./Bullet"
-
-
 export type Tank = {
     x: number, // Vị trí ban đầu X (giữa)
     y: number, // Vị trí ban đầu Y (giữa)
@@ -9,6 +6,9 @@ export type Tank = {
     lastShootTimestamp: number;
     width: number,
     height: number,
+    radius: number,
+    maxHealth: number,
+    inBush: string,
 }
 
 export type TankInput = {
@@ -34,14 +34,3 @@ export interface TankAnimationState {
         
     }
 }
-
-
-
-// interface PlayerState {
-//   x: number;
-//   y: number;
-//   width: number;
-//   height: number;
-//   frameIndex: number;
-//   frameCounter: number;
-// }

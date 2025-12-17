@@ -14,31 +14,25 @@ export const tankBulletAnimation = (
     const serverTimestamp = bulletState.current.serverTimestamp;
 
     // Duyệt qua tất cả các đạn trong trạng thái nhận được từ server
-    for (const playerId in bulletStates) {
-      // Khởi tạo trạng thái hoạt ảnh nếu chưa có
-      if (bulletAnimationState.current[playerId] === undefined) 
-        bulletAnimationState.current[playerId] = {};
-
-      const bullets = bulletStates[playerId];
-      const animStates = bulletAnimationState.current[playerId];
-
-      for (const b in bullets) {
-        const bullet = bullets[b];
-        // Khởi tạo trạng thái hoạt ảnh nếu chưa có
-        if (animStates[b] === undefined) {
-          animStates[b] = {
-            frameIndex: 0,
-            frameCounter: 0,
-          };
-        }
-
+    for(const bid in bulletStates) {
+      const bullet = bulletStates[bid];
+      const playerId = bullet.ownerId;
+      // Khởi tạo trạng thái hoạt ảnh bullet nếu chưa có
+      if (bulletAnimationState.current[bid] === undefined) {
+        bulletAnimationState.current[bid] = {
+          frameIndex: 0,
+          frameCounter: 0,
+        };
+      }
+      
         // Cập nhật hoạt ảnh đạn
-        const animState = animStates[b];
+        const animState = bulletAnimationState.current[bid];
         animState.frameCounter++;
         if (animState.frameCounter >= ANIMATION_SPEED) {
           animState.frameCounter = 0;
           // Chuyển sang khung hình tiếp theo, nếu là khung cuối thì quay lại khung đầu (0)
-          animState.frameIndex = (animState.frameIndex + 1) % frames.current.length;
+          animState.frameIndex =
+            (animState.frameIndex + 1) % frames.current.length;
         }
 
         // Vẽ đạn lên Canvas
@@ -70,7 +64,7 @@ export const tankBulletAnimation = (
         ctx.restore();
       }
     }
-  };
+  
 
   updateAnimation();
 };

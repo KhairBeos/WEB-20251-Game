@@ -15,6 +15,7 @@ export interface TankGunAnimationState {
         frameIndex: number,
         frameCounter: number,
         isFiring: boolean
+        lastAnimationTime: number
         
     }
 }
