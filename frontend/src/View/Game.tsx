@@ -3,7 +3,7 @@ import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { tankBulletAnimation } from "../Animation/tankBulletAnimation";
 import { tankGunAnimation } from "../Animation/tankGunAnimation";
 import { tankMovingAnimation } from "../Animation/tankMovingAnimation";
-import { TILE_SIZE, MAX_DPR } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
+import { TILE_SIZE, MAX_DPR, CANVAS_WIDTH, CANVAS_HEIGHT } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
 import { useGameInput } from "../Hook/useGameInput";
 import useLoadLazeBullet from "../Hook/useLoadLazeBullet";
 import useLoadTankBody from "../Hook/useLoadTankBody";
@@ -22,6 +22,7 @@ import useLoadBush from "../Hook/useLoadBush";
 import drawMap from "../Animation/drawMap";
 import useLoadGround from "../Hook/useLoadGround";
 import useLoadTower from "../Hook/useLoadTower";
+import Scoreboard from "./Scoreboard";
 
 // --- BẬT DEBUG MODE: True để hiện khung va chạm ---
 const DEBUG_MODE = true; 
@@ -284,12 +285,15 @@ function Game() {
 
   // Canvas full màn hình, không viền thừa
   return (
-    <canvas 
-        ref={canvasRef} 
-        width={viewport.current.w} 
-        height={viewport.current.h} 
-        className="bg-gray-900 block touch-none w-screen h-screen" // block để xóa dòng trắng, touch-none để tránh scroll trên mobile
+  <div className="w-full h-screen bg-gray-900 overflow-hidden relative">
+    <Scoreboard />
+    <canvas
+      ref={canvasRef}
+      width={CANVAS_WIDTH}
+      height={CANVAS_HEIGHT}
+      className="border-4 border-purple-500 rounded-lg bg-gray-50"
     />
+  </div>
   );
 }
 
