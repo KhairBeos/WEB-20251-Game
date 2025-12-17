@@ -1,7 +1,11 @@
 import { MapCell, TILE_SIZE, MAP_ROWS, MAP_COLS } from 'src/websockets/model/MapData';
 import { Tank } from '../model/Tank';
 
-export function tankWallCollision(map: MapCell[][], tankStates: { [playerId: string]: Tank }) {
+export function tankWallCollision(
+  map: MapCell[][],
+  tankStates: { [playerId: string]: Tank },
+  server: any,
+) {
   for (const id in tankStates) {
     const tank = tankStates[id];
     const R = tank.radius;
@@ -11,7 +15,7 @@ export function tankWallCollision(map: MapCell[][], tankStates: { [playerId: str
     const topRow = Math.floor((tank.y - R) / TILE_SIZE);
     const bottomRow = Math.floor((tank.y + R) / TILE_SIZE);
 
-    var inBush = "none";
+    let inBush = 'none';
 
     for (let row = topRow; row <= bottomRow; row++) {
       for (let col = leftCol; col <= rightCol; col++) {
@@ -28,18 +32,50 @@ export function tankWallCollision(map: MapCell[][], tankStates: { [playerId: str
         }
         const root = map[rootR][rootC];
         const val = root.val;
-       
+
         // Bỏ qua vật thể không va chạm: đất (0), spawn (9),
         if (val === 0 || val === 9) {
           continue;
         }
-        
- 
+
         // Nếu là bụi (11..14), set tank.inBush = true
-        if((val >= 11 && val <= 14))
-        {
+        if (val >= 11 && val <= 14) {
           inBush = `bush_${rootR}_${rootC}`;
-          continue
+          continue;
+        }
+       
+        // Nếu là item pickup (101..104)
+        if (val >= 101 && val <= 104) {
+          if(tank.itemKind !== 'none') continue; // Đang có item rồi, không nhặt thêm
+          switch (root.val) {
+            case 101: // health
+              tank.health = Math.min(tank.maxHealth, tank.health + 50);
+              tank.itemKind = 'health';
+              tank.itemExpire = Date.now() + 2000; // 2s
+              map[rootR][rootC] = { root_r: -1, root_c: -1, val: 0 };
+              server.emit('mapUpdate', { r: rootR, c: rootC, cell: map[rootR][rootC] });
+              break;
+            case 102: // shield
+              tank.shield = Math.min(tank.shield + 50, 50);
+              tank.itemKind = 'shield';
+              tank.itemExpire = Date.now() + 10000; // 10s
+              map[rootR][rootC] = { root_r: -1, root_c: -1, val: 0 };
+              server.emit('mapUpdate', { r: rootR, c: rootC, cell: map[rootR][rootC] });
+              break;
+            case 103: // speed boost
+              tank.itemKind = 'speed';
+              tank.itemExpire = Date.now() + 10000; // 10s
+              map[rootR][rootC] = { root_r: -1, root_c: -1, val: 0 };
+              server.emit('mapUpdate', { r: rootR, c: rootC, cell: map[rootR][rootC] });
+              break;
+            case 104: // damage boost
+              tank.itemKind = 'damage';
+              tank.itemExpire = Date.now() + 10000; // 10s
+              map[rootR][rootC] = { root_r: -1, root_c: -1, val: 0 };
+              server.emit('mapUpdate', { r: rootR, c: rootC, cell: map[rootR][rootC] });
+              break;
+          }
+          
         }
 
         // Các vật thể còn lại coi là vật cản: tường/tower (1..4), cây viền (10)
@@ -55,7 +91,6 @@ export function tankWallCollision(map: MapCell[][], tankStates: { [playerId: str
           //console.log(`Distance to tile: dx=${distX.toFixed(2)}, dy=${distY.toFixed(2)}`);
 
           const distance = Math.sqrt(distX * distX + distY * distY);
-          const minDistance = R + TILE_SIZE / 2;
 
           if (distance === 0) {
             tank.x += tank.radius;
@@ -96,7 +131,7 @@ export function tankWallCollision(map: MapCell[][], tankStates: { [playerId: str
         }
       }
     }
-    
+
     // Cập nhật trạng thái inBush của tank
     tank.inBush = inBush;
   }

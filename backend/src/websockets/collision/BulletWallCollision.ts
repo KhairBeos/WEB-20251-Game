@@ -5,31 +5,14 @@ import { Tank, TankState } from '../model/Tank';
 // Trước đây dùng hitbox tròn cho cây 3x3; nay cây (10) và bụi (11..14)
 // là vật cản chữ nhật (1x2 và 3x2). Đạn chạm là dừng (không trừ máu).
 
-function checkCircleHit(
-  bulletX: number,
-  bulletY: number,
-  bulletRadius: number,
-  cellR: number,
-  cellC: number,
-): boolean {
-  // Tính toán vị trí của ô
-  const tileX = cellC * TILE_SIZE + TILE_SIZE / 2;
-  const tileY = cellR * TILE_SIZE + TILE_SIZE / 2;
-  // Tính khoảng cách từ tâm đạn đến tâm ô
-  const distX = bulletX - tileX;
-  const distY = bulletY - tileY;
-  const distance = Math.sqrt(distX * distX + distY * distY);
-  const minDistance = bulletRadius + TILE_SIZE / 2;
-  return distance < minDistance;
-}
-
 export function bulletWallCollision(
   map: MapCell[][],
   bulletState: { [bulletId: string]: Bullet },
   tankState: TankState,
   server: any,
+  onTowerDestroyed?: (rootR: number, rootC: number) => void,
 ) {
-  var removedBullets: string[] = [];
+  const removedBullets: string[] = [];
   for (const bid in bulletState) {
     const bullet = bulletState[bid];
     // --- XỬ LÝ BẮN TRÚNG MAP ---
@@ -41,14 +24,19 @@ export function bulletWallCollision(
       removedBullets.push(bid); // Đạn bay ra ngoài bản đồ
       continue;
     }
-    let tile = map[r][c];
+    const tile = map[r][c];
     if (tile.val === 0) {
       continue; // Ô trống, đạn bay tiếp
     }
 
-    let root = map[tile.root_r][tile.root_c];
-    let rootR = tile.root_r;
-    let rootC = tile.root_c;
+    // Kiểm tra root position hợp lệ
+    if (tile.root_r < 0 || tile.root_r >= MAP_ROWS || tile.root_c < 0 || tile.root_c >= MAP_COLS) {
+      return true; // Root position không hợp lệ
+    }
+
+    const root = map[tile.root_r][tile.root_c];
+    const rootR = tile.root_r;
+    const rootC = tile.root_c;
 
     // 1. Bắn trúng Tường (1-4) -> Phá hủy
     if (root.val >= 1 && root.val <= 4) {
@@ -70,10 +58,11 @@ export function bulletWallCollision(
         server.emit('mapUpdate', { r: rootR, c: rootC + 1, cell: map[rootR][rootC + 1] });
         server.emit('mapUpdate', { r: rootR + 1, c: rootC, cell: map[rootR + 1][rootC] });
         server.emit('mapUpdate', { r: rootR + 1, c: rootC + 1, cell: map[rootR + 1][rootC + 1] });
+        if (onTowerDestroyed) onTowerDestroyed(rootR, rootC);
       } else {
         // Chỉ nứt tường
         // console.log(`map update cell at (${rootR}, ${rootC}) to cell=${newVal}`);
-        console.log(map[rootR][rootC]);
+        // console.log(map[rootR][rootC]);
         server.emit('mapUpdate', { r: rootR, c: rootC, cell: map[rootR][rootC] });
       }
       removedBullets.push(bid);

@@ -12,9 +12,12 @@ export interface Tank {
   lastShootTimestamp: number;
   inBush: string;
   speed: number;
+  damage: number;
+  shield: number; // shield HP that absorbs bullet damage first
+  itemKind: string; // for pickup items (health, shield, speed, damage)
+  itemExpire: number; // timestamp when item effect expires
   score: number;
   level: number;
-  damage: number;
 }
 
 export interface TankInput {

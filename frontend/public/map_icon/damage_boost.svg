@@ -1,0 +1,22 @@
+<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <!-- Khung lục giác -->
+    <path d="M30,5 L55,17.5 L55,42.5 L30,55 L5,42.5 L5,17.5 Z" 
+          fill="#34495e" stroke="#2c3e50" stroke-width="2"/>
+    
+    <!-- Viên đạn -->
+    <path d="M25,45 L35,45 L35,25 Q35,15 30,10 Q25,15 25,25 Z" 
+          fill="#f1c40f" stroke="#f39c12" stroke-width="2"/>
+    <rect x="24" y="45" width="12" height="5" fill="#f39c12"/>
+    
+    <!-- Tia lửa xung quanh -->
+    <path d="M15,30 L10,25 M45,30 L50,25 M30,55 L30,50" 
+          stroke="#e74c3c" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

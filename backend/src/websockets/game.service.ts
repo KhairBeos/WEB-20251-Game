@@ -7,16 +7,16 @@ import { INITIAL_MAP, MapCell, SPAWNPOINTS, TILE_SIZE } from 'src/websockets/mod
 import { bulletVSTankCollision } from './collision/BulletVSTankCollision';
 import { tankCollision } from './collision/TankCollision';
 import { tankWallCollision } from './collision/TankWallCollision';
-import { BulletInput, BulletInputBuffer, BulletState } from './model/Bullet';
+import { BulletInput, BulletInputBuffer, BulletState, Bullet } from './model/Bullet';
 import { TankInput, TankInputBuffer, TankState } from './model/Tank';
 import { GridSpatial } from './utils/GridSpartial';
 import { bulletWallCollision } from './collision/BulletWallCollision';
-import { MapService } from './map/MapService';
+import { MapService } from './service/MapService';
 import { BulletStateManager } from './state/BulletStateManager';
 import { TankStateManager } from './state/TankStateManager';
-// import { VisibilityService } from './visibility/VisibilityService';
-
-const SHOOT_COOLDOWN = 1000;
+import { PickupService } from './service/PickupService';
+import { TowerService } from './service/TowerService';
+import { BushService } from './service/BushService';
 
 @Injectable()
 export class GameService implements OnModuleInit {
@@ -38,7 +38,9 @@ export class GameService implements OnModuleInit {
   private mapService: MapService;
   private tankManager: TankStateManager;
   private bulletManager: BulletStateManager;
-  private lastBroadcastTs: number | undefined;
+  private pickupService: PickupService;
+  private towerService: TowerService;
+  private bushService: BushService;
 
   private gridSpatial: GridSpatial = new GridSpatial();
 
@@ -64,7 +66,33 @@ export class GameService implements OnModuleInit {
     this.mapService = new MapService(this.currentMap);
     this.tankManager = new TankStateManager();
     this.bulletManager = new BulletStateManager();
+    this.pickupService = new PickupService(this.currentMap, this.server);
+    this.towerService = new TowerService(this.currentMap, this.server);
+    this.bushService = new BushService(this.currentMap, this.server);
     setInterval(() => this.gameLoop(), this.GAME_TICK_RATE);
+
+    // Spawn initial pickups (3 items at start)
+    for (let i = 0; i < 3; i++) {
+      this.pickupService.spawnRandomPickup();
+    }
+
+    // Định kỳ: di chuyển lại một số bụi sang vị trí ngẫu nhiên
+    setInterval(() => {
+      try {
+        this.bushService.relocateBushes(8); // đổi vị trí 8 cụm bụi mỗi chu kỳ
+      } catch {
+        // swallow errors to keep timer alive
+      }
+    }, 30000); // 30s
+
+    // Spawn new pickups periodically (every 10 seconds) to keep items on map
+    setInterval(() => {
+      try {
+        this.pickupService.spawnRandomPickup();
+      } catch {
+        // swallow errors to keep timer alive
+      }
+    }, 10000); // 10s
   }
 
   addPlayer(id: string) {
@@ -98,6 +126,9 @@ export class GameService implements OnModuleInit {
       radius: 86 / 2,
       lastShootTimestamp: 0,
       inBush: 'none',
+      itemKind: 'none',
+      itemExpire: 0,
+      shield: 0,
     };
 
     console.log(`Player ${id} joined.`);
@@ -151,19 +182,34 @@ export class GameService implements OnModuleInit {
       this.tankManager.update(
         this.tankState,
         this.tankInputBuffer,
-        this.handleBulletFire.bind(this),
+        this.handleBulletFire.bind(this) as unknown as (pid: string, payload: any) => void,
       );
 
       this.bulletManager.update(this.bulletState, this.bulletInputBuffer, this.tankState);
 
       this.gridSpatial.updateGrid(
         Object.values(this.tankState.tankStates),
-        Object.values(this.bulletState.bulletStates).flatMap((bullets) => Object.values(bullets)),
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call
+        (Object.values(this.bulletState.bulletStates) as any).flatMap(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-argument
+          (bullets: any) => Object.values(bullets) as any,
+        ) as Bullet[],
       );
 
-      tankCollision(this.tankState.tankStates, this.gridSpatial);
-      tankWallCollision(this.currentMap, this.tankState.tankStates);
-      bulletWallCollision(this.currentMap, this.bulletState.bulletStates,this.tankState ,this.server);
+      tankCollision(this.tankState.tankStates);
+      tankWallCollision(this.currentMap, this.tankState.tankStates, this.server);
+
+      // Callback: khi tường phá hủy, xử lý pickup drop + respawn tower
+      // const onTowerDestroyed = (rootR: number, rootC: number) => {
+      //   this.towerService.onTowerDestroyed(rootR, rootC);
+      // };
+      bulletWallCollision(
+        this.currentMap,
+        this.bulletState.bulletStates,
+        this.tankState,
+        this.server,
+      );
+
       bulletVSTankCollision(
         this.tankState.tankStates,
         this.bulletState.bulletStates,
@@ -171,6 +217,7 @@ export class GameService implements OnModuleInit {
       );
 
       this.gameLogicLoop();
+      // Pickups: handle detection and effects via service
 
       this.tankState.serverTimestamp = Date.now();
       this.bulletState.serverTimestamp = Date.now();
@@ -195,12 +242,27 @@ export class GameService implements OnModuleInit {
       const tank = this.tankState.tankStates[pid];
       const newLevel = Math.floor(tank.score / 10) + 1;
       if (newLevel !== tank.level) {
-        console.log(`Player ${pid} score: ${tank.score}, leveling up from ${tank.level} to ${newLevel}`);
+        // console.log(
+        //   `Player ${pid} score: ${tank.score}, leveling up from ${tank.level} to ${newLevel}`,
+        // );
+        const lvDiff = newLevel - tank.level;
+
         tank.level = newLevel;
-        tank.speed = 2 + (newLevel - 1) * 0.2; // Tăng tốc độ theo level
-        tank.maxHealth = 100 + (newLevel - 1) * 10; // Tăng maxHealth theo level
-        tank.damage = 10 + (newLevel - 1) * 2; // Tăng damage theo level
-        console.log(`Player ${pid} leveled up to ${newLevel}`);
+        tank.maxHealth += lvDiff * 20;
+        tank.damage += lvDiff * 1;
+        tank.speed += lvDiff * 0.2;
+        // console.log(`Player ${pid} leveled up to ${newLevel}`);
+      }
+    }
+
+    // Kiểm tra item expire
+    const nowTs = Date.now();
+    for (const pid in this.tankState.tankStates) {
+      const tank = this.tankState.tankStates[pid];
+      if (tank.itemKind !== 'none' && tank.itemExpire && nowTs > tank.itemExpire) {
+        tank.shield = 0;
+        tank.itemKind = 'none';
+        tank.itemExpire = 0;
       }
     }
   }

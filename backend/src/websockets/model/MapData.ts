@@ -7,6 +7,10 @@
 // 11..14: Bush (Gốc) - 3x2 tile (120x80) với 4 biến thể
 // 9: Trụ Spawn
 // 99: VẬT CẢN TÀNG HÌNH
+// 101: Pickup - Health
+// 102: Pickup - Shield
+// 103: Pickup - Speed Boost
+// 104: Pickup - Damage Boost
 
 export const MAP_ROWS = 80;
 export const MAP_COLS = 80;
@@ -98,6 +102,31 @@ const generateMap = () => {
         placeObject(r, c, variant);
       }
     }
+  }
+
+  // 3. Spawn một số pickups rải rác ở ô trống (1x1)
+  const pickupTypes = [101, 102, 103, 104];
+  const desiredPickups = 25; // số lượng mục tiêu
+  let placed = 0;
+  let safety = 0;
+  while (placed < desiredPickups && safety < 5000) {
+    safety++;
+    const r = Math.floor(Math.random() * MAP_ROWS);
+    const c = Math.floor(Math.random() * MAP_COLS);
+    // tránh biên viền cây và vùng spawn rộng rãi
+    if (r < 3 || r > MAP_ROWS - 4 || c < 3 || c > MAP_COLS - 4) continue;
+    let nearSpawn = false;
+    for (const sp of SPAWNPOINTS) {
+      if (Math.abs(sp.r - r) <= 6 && Math.abs(sp.c - c) <= 6) {
+        nearSpawn = true;
+        break;
+      }
+    }
+    if (nearSpawn) continue;
+    if (map[r][c].val !== 0) continue;
+    const type = pickupTypes[Math.floor(Math.random() * pickupTypes.length)];
+    placeObject(r, c, type);
+    placed++;
   }
 
   SPAWNPOINTS.forEach((pos) => {

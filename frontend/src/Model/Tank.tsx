@@ -4,16 +4,23 @@ export type Tank = {
     x: number, // Vị trí ban đầu X (giữa)
     y: number, // Vị trí ban đầu Y (giữa)
     degree:number // Goc quay
-    health: number
+    inBush: string,
     lastShootTimestamp: number;
     width: number,
     height: number,
     radius: number,
+    // Shield value (optional) - amount of temporary shield points
     maxHealth: number,
-    inBush: string,
+    health: number
+    shield: number,
     speed: number,
+
+    itemKind: string; // for pickup items (health, shield, speed, damage)
+    itemExpire: number; // timestamp when item effect expires
+
     score: number,
     level: number,
+
 }
 
 export type TankInput = {
@@ -31,10 +38,13 @@ export interface TankState {
 }
 
 export interface TankAnimationState {
-    [playerId: string]: {
-        frameIndex: number,
-        frameCounter: number,
-        isMoving: boolean
-        
-    }
+  [playerId: string]: {
+    frameIndex: number,
+    frameCounter: number,
+    isMoving: boolean,
+    
+    
+   
+  
+  }
 }

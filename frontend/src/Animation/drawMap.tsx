@@ -1,10 +1,10 @@
 import { RefObject } from "react";
-import { BUSH_SELF_ALPHA } from "../GlobalSetting";
+import { BUSH_SELF_ALPHA, PICKUP_ICON_SIZE, TOWER_DRAW_SIZE, DEBUG_MODE, TILE_SIZE } from "../GlobalSetting";
 import { MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
 
 
 // --- 4. HÀM VẼ MAP ---
-    const drawMap = (
+const drawMap = (
     camX:number,
     camY:number,
     dynamicMap: RefObject<MapCell[][]>,
@@ -13,8 +13,8 @@ import { MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
     treeImg: RefObject<HTMLImageElement[]>,
     towerImg: RefObject<HTMLImageElement[]>,
     bushImg: RefObject<HTMLImageElement[]>,
+    icons: RefObject<Record<string, HTMLImageElement>> | undefined,
         ctx: CanvasRenderingContext2D,
-        
     ) => {
    
     if (dynamicMap.current.length === 0) return;
@@ -30,11 +30,10 @@ import { MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
         bush2: bushImg.current?.[1],
         bush3: bushImg.current?.[2],
         bush4: bushImg.current?.[3],
-
     }
-    const DEBUG_MODE = false; // Bật tắt debug hitbox
+    const iconImgs = icons?.current || {};
    
-    const TILE = 40; // Base unit
+    const TILE = TILE_SIZE; // Base unit (use canonical value)
 
     // Tính toán ô bắt đầu và kết thúc dựa trên vị trí camera và kích thước viewport
     var startCol = Math.floor(camX / TILE);
@@ -72,16 +71,16 @@ import { MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
             const x = c * TILE;
             const y = r * TILE;
 
-            // Vẽ Tower (80x80)
+            // Vẽ Tower (2x2 tile)
             if (val >= 1 && val <= 4) {
                 let img = val === 4 ? imgs.tow4 : val === 3 ? imgs.tow3 : val === 2 ? imgs.tow2 : imgs.tow1;
-                if (img) ctx.drawImage(img, x, y, 80, 80);
+                if (img) ctx.drawImage(img, x, y, TOWER_DRAW_SIZE, TOWER_DRAW_SIZE);
 
                 // [DEBUG] Vẽ khung đỏ (Square Hitbox)
                 if (DEBUG_MODE) {
                     ctx.strokeStyle = "red";
                     ctx.lineWidth = 2;
-                    ctx.strokeRect(x, y, 80, 80);
+                    ctx.strokeRect(x, y, TOWER_DRAW_SIZE, TOWER_DRAW_SIZE);
                 }
             }
             // Vẽ Tree viền (40x80 = 1x2 tile)
@@ -108,8 +107,36 @@ import { MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
                     ctx.strokeRect(x, y, 120, 80);
                 }
             }
-            
+        
         }
     }
+
+    // LỚP 3: PICKUPS (vẽ sau các vật thể lớn để luôn hiển thị trên cùng)
+    for (let r = startRow; r <= endRow; r++) {
+        for (let c = startCol; c <= endCol; c++) {
+            const val = map[r][c].val;
+            if (val < 101 || val > 104) continue;
+            const x = c * TILE;
+            const y = r * TILE;
+            let img: HTMLImageElement | undefined;
+            if (val === 101) img = iconImgs.health;
+            else if (val === 102) img = iconImgs.shield;
+            else if (val === 103) img = iconImgs.speedBoost;
+            else if (val === 104) img = iconImgs.damageBoost;
+            if (img) {
+                const size = PICKUP_ICON_SIZE; 
+                const cx = Math.round(x + (TILE - size) / 2);
+                const cy = Math.round(y + (TILE - size) / 2);
+                ctx.imageSmoothingEnabled = true;
+                ctx.drawImage(img, cx, cy, size, size);
+            }
+            if (DEBUG_MODE) {
+                ctx.strokeStyle = "#ffaa00";
+                ctx.strokeRect(x, y, TILE, TILE);
+            }
+        }
+    }
+   
+
     }
     export default drawMap;
