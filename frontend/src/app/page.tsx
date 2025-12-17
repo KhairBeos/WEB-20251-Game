@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const SKINS = [
-  { id: "red", name: "Đỏ", img: "/skins/red.png" },
-  { id: "mint", name: "Đỏ", img: "/skins/mint.png" },
-  { id: "ocean", name: "Đại Dương", img: "/skins/ocean.png" },
-  { id: "lemon", name: "Chanh Tươi", img: "/skins/lemon.png" },
-  { id: "dark", name: "Bóng Đêm", img: "/skins/dark.png" },
+  { id: "scarlet", name: "Scarlet", img: "/skins/scarlet.png" },
+  { id: "desert", name: "Desert", img: "/skins/desert.png" },
+  { id: "ocean", name: "Ocean", img: "/skins/ocean.png" },
+  { id: "lemon", name: "Lemon", img: "/skins/lemon.png" },
+  { id: "violet", name: "Violet", img: "/skins/violet.png" },
 ];
 
 export default function LoginPage() {
@@ -18,7 +18,7 @@ export default function LoginPage() {
   );
   const [volume, setVolume] = useState(50);
   const [skinIndex, setSkinIndex] = useState(0);
-  const router = useRouter(); 
+  const router = useRouter();
 
   const handlePlay = () => {
     if (!username.trim()) {
@@ -40,7 +40,8 @@ export default function LoginPage() {
   };
 
   const currentSkin = SKINS[skinIndex];
-return (
+
+  return (
     <>
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap");
@@ -81,8 +82,8 @@ return (
           50% {
             transform: translateY(-5px);
           }
-      }
-      }</style>
+        }
+      `}</style>
 
       <div style={styles.container}>
         <div
@@ -166,7 +167,8 @@ return (
               onMouseOut={(e) =>
                 (e.currentTarget.style.transform = "translateY(0)")
               }
-    VÀO GAME NGAY 🚀
+            >
+              VÀO GAME NGAY 🚀
             </button>
           </div>
         </div>
@@ -181,7 +183,7 @@ return (
             >
               ⚙️ Cài đặt
             </button>
-      {activeMenu === "settings" && (
+            {activeMenu === "settings" && (
               <div style={styles.popup}>
                 <h4 style={styles.popupTitle}>Âm lượng</h4>
                 <div
@@ -248,6 +250,7 @@ return (
 const KeyCap = ({ label }: { label: string }) => (
   <div style={styles.keyCap}>{label}</div>
 );
+
 const styles: any = {
   container: {
     display: "flex",
@@ -346,7 +349,7 @@ const styles: any = {
   },
   skinName: { fontSize: "0.9rem", fontWeight: "bold", color: "#888" },
 
-  // --- CHỈNH SỬA 3: CSS Container cho ảnh (Đơn giản hóa) ---
+  
   tankContainer: {
     position: "relative",
     width: "80px", // Tăng kích thước lên chút cho rõ ảnh
