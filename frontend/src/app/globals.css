@@ -120,3 +120,15 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Fullscreen layout reset to avoid scrollbars */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* chặn scroll bar */
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}

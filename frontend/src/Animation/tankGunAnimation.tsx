@@ -2,6 +2,7 @@ import { RefObject } from "react";
 import { KeyMap } from "../Model/KeyMap";
 import { TankState } from "../Model/Tank";
 import { TankGunAnimationState } from "../Model/TankGun";
+import { BUSH_SELF_ALPHA } from "../GlobalSetting";
 
 export const tankGunAnimation = (
   ctx: CanvasRenderingContext2D,
@@ -9,15 +10,18 @@ export const tankGunAnimation = (
   tankGunAnimationState: RefObject<TankGunAnimationState>,
   keysPressed: RefObject<KeyMap>,
   frames: RefObject<HTMLImageElement[]>,
+  viewerId?: string,
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
     const tankStates = tankState.current.tankStates;
     const serverTimestamp = tankState.current.serverTimestamp;
 
+     if(viewerId == null) return
+    const viewerTank = tankStates[viewerId];
+
     // Duyệt qua tất cả các tank trong trạng thái nhận được từ server
     for (const playerId in tankStates) {
-      
       const p = tankStates[playerId];
 
       // Khởi tạo trạng thái hoạt ảnh nếu chưa có
@@ -85,8 +89,29 @@ export const tankGunAnimation = (
       const destWidth = p.width;
       const destHeight = p.height;
 
-      //console.log(img,destX,destY,destWidth,destHeight)
+      // Nếu tank của mình và đang ở trong bụi, vẽ mờ đi
+      if (playerId === viewerId && p.inBush != "none") {
+        ctx.globalAlpha = BUSH_SELF_ALPHA;
+      }
+
+      // Nếu không phải tank của mình và tank đó đang ở trong bụi, không vẽ lên canvas
+      if (playerId !== viewerId && p.inBush != "none") {
+        // Nếu cùng bụi với tank của mình, vẽ mờ đi
+        if (p.inBush == viewerTank.inBush) {
+          ctx.globalAlpha = BUSH_SELF_ALPHA; // Mức độ mờ cho tank khác trong bụi
+        }
+        else {
+          ctx.restore();
+          continue; // Bỏ qua việc vẽ tank này
+        }
+      }
+
+      
+
+
+
       ctx.drawImage(img, destX, destY, destWidth, destHeight);
+     
 
       ctx.restore();
     }

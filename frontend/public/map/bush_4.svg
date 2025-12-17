@@ -1,0 +1,24 @@
+<svg width="160" height="120" viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="f4" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#f4)">
+    <!-- Cỏ lớp sau (Tối) -->
+    <path d="M10,110 Q30,20 50,110 M40,110 Q60,10 80,110 M70,110 Q90,20 110,110 M100,110 Q120,10 140,110 M130,110 Q150,20 150,110" 
+          fill="none" stroke="#7D6608" stroke-width="8" stroke-linecap="round"/>
+
+    <!-- Cỏ lớp giữa (Vàng đậm) -->
+    <path d="M20,115 Q40,30 60,115 M50,115 Q70,25 90,115 M80,115 Q100,30 120,115 M110,115 Q130,25 140,115" 
+          fill="none" stroke="#9A7D0A" stroke-width="6" stroke-linecap="round"/>
+    
+    <!-- Cỏ lớp trước (Vàng sáng) -->
+    <path d="M30,120 Q50,40 70,120 M60,120 Q80,35 100,120 M90,120 Q110,40 130,120" 
+          fill="none" stroke="#B7950B" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Đế cỏ -->
+  <path d="M20,110 Q80,95 140,110" stroke="#7D6608" stroke-width="4" fill="none" opacity="0.8"/>
+</svg>

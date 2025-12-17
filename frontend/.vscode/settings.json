@@ -1,8 +1,8 @@
 {
-  "editor.formatOnSave": false, 
+  "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit",
-    "source.organizeImports": "explicit"
+    "source.fixAll.eslint": true,
+    "source.organizeImports": true
   },
   "eslint.validate": [
     "javascript",
@@ -10,7 +10,9 @@
     "typescript",
     "typescriptreact"
   ],
-  "prettier.enable": false,
+  "prettier.enable": true,
+  "prettier.requireConfig": true,
+  "prettier.documentSelectors": ["**/*.{js,jsx,ts,tsx,css,scss,json,md}"]
 
   "css.lint.unknownAtRules": "ignore",
   "scss.lint.unknownAtRules": "ignore",
