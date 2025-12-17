@@ -1,0 +1,20 @@
+<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <!-- Hình cái khiên -->
+    <path d="M30,55 C10,45 5,35 5,15 L30,5 L55,15 C55,35 50,45 30,55 Z" 
+          fill="#9b59b6" stroke="#8e44ad" stroke-width="2"/>
+    
+    <!-- Họa tiết chữ thập trên khiên -->
+    <path d="M30,10 L30,50 M15,25 L45,25" 
+          stroke="#ecf0f1" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+          
+    <!-- Viền sáng -->
+    <path d="M10,15 L30,7 L50,15" fill="none" stroke="white" stroke-width="2" opacity="0.4"/>
+  </g>
+</svg>

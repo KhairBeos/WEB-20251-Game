@@ -3,7 +3,7 @@ import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { tankBulletAnimation } from "../Animation/tankBulletAnimation";
 import { tankGunAnimation } from "../Animation/tankGunAnimation";
 import { tankMovingAnimation } from "../Animation/tankMovingAnimation";
-import { TILE_SIZE, MAX_DPR } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
+import { TILE_SIZE, MAX_DPR, DEBUG_MODE } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
 import { useGameInput } from "../Hook/useGameInput";
 import useLoadLazeBullet from "../Hook/useLoadLazeBullet";
 import useLoadTankBody from "../Hook/useLoadTankBody";
@@ -22,11 +22,20 @@ import useLoadBush from "../Hook/useLoadBush";
 import drawMap from "../Animation/drawMap";
 import useLoadGround from "../Hook/useLoadGround";
 import useLoadTower from "../Hook/useLoadTower";
+import { useSearchParams } from "next/navigation";
 
 // --- BẬT DEBUG MODE: True để hiện khung va chạm ---
-const DEBUG_MODE = true; 
+import useLoadTankFeatures from "../Hook/useLoadTankFeatures";
+import useLoadMapIcons from "../Hook/useLoadMapIcons";
+import useLoadItem from "../Hook/useLoadTankFeatures";
 
 function Game() {
+  // Lấy ra object chứa các query parameter
+  const searchParams = new URLSearchParams(window.location.search);
+  // Lấy giá trị của 'name'
+  const playerName = searchParams.get('name'); // Giá trị đã được tự động giải mã (decode)
+  console.log("Player Name:", playerName);
+
   // --- STATE GAME ---
   const tankStateRef = useRef<TankState>({ serverTimestamp: 0, tankStates: {} });
   const bulletStateRef = useRef<BulletState>({ serverTimestamp: 0, bulletStates: {} });
@@ -49,6 +58,8 @@ function Game() {
   const {imageRef:bushImageRef,isImageLoaded:isBushImageLoaded} =  useLoadBush()
   const {imageRef:groundImageRef,isImageLoaded:isGroundImageLoaded} =  useLoadGround()
   const {imageRef:towerRef,isImageLoaded:isTowerImageLoaded} =  useLoadTower()
+  const {imageRef:itemRef,isImageLoaded:isItemImageLoaded} = useLoadItem()
+  const {images:mapIcons,isImageLoaded:isMapIconsLoaded} = useLoadMapIcons()
   
    const mapAssetsRef = useRef<any>({});
 
@@ -181,15 +192,21 @@ function Game() {
     treeImg: RefObject<HTMLImageElement[]>,
     towerImg: RefObject<HTMLImageElement[]>,
     bushImg: RefObject<HTMLImageElement[]>,
+    icons: typeof mapIcons,
     ctx: CanvasRenderingContext2D
   ) => {
     
-    drawMap(camX,camY,dynamicMap,viewPort,groundImg,treeImg,towerImg,bushImg,ctx)
-  },[isGroundImageLoaded,isTreeImageLoaded,isTowerImageLoaded,isBushImageLoaded, socket?.id])
+    drawMap(camX,camY,dynamicMap,viewPort,groundImg,treeImg,towerImg,bushImg,icons,ctx)
+  },[isGroundImageLoaded,isTreeImageLoaded,isTowerImageLoaded,isBushImageLoaded,isMapIconsLoaded, socket?.id])
+
+  const tankHealthAnimationCB = useCallback((
+    ctx: CanvasRenderingContext2D,
+    tankState: RefObject<TankState>,
+    itemImages: RefObject<HTMLImageElement[]>,
+  ) => tankHealthAnimation(ctx,tankState, itemImages, socket?.id),[isItemImageLoaded])
 
 
   // --- 3. LOAD ASSETS ---
- 
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   useEffect(() => {
@@ -207,12 +224,11 @@ function Game() {
     });
   }, []);
 
-  
 
   // --- 5. GAME LOOP (ANIMATE) ---
   const animate = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !isImageLoaded || !isMapLoaded) { 
+    if (!canvas || !isImageLoaded || !isMapLoaded || !isMapIconsLoaded) { 
         animationFrameId.current = requestAnimationFrame(animate); 
         return; 
     }
@@ -255,12 +271,14 @@ function Game() {
     ctx.save();
     ctx.translate(-camX, -camY); // Dịch chuyển thế giới
 
-    drawMapCB(camX, camY, viewport, dynamicMap, groundImageRef, treeImageRef, towerRef, bushImageRef, ctx);
+    // console.log("Drawing frame at cam:", camX, camY);
+    // console.log("My tank position:", myTank?.x, myTank?.y);
+    drawMapCB(camX, camY, viewport, dynamicMap, groundImageRef, treeImageRef, towerRef, bushImageRef, mapIcons, ctx);
     tankUpdatePosistion(keysPressed, tankGunAnimationState, socket); // Cập nhật vị trí tank dựa trên phím nhấn và gửi lên server
     tankMovingAnimationCB(ctx, tankStateRef, tankAnimationState, keysPressed, tankBodyImageRef);
     tankGunAnimationCB(ctx, tankStateRef, tankGunAnimationState, keysPressed, tankGunImageRef);
     tankBulletAnimationCB(ctx, bulletStateRef, bulletAnimationState, bulletImageRef);
-    tankHealthAnimation(ctx, tankStateRef, socket?.id);
+    tankHealthAnimationCB(ctx, tankStateRef, itemRef );
 
     ctx.restore();
 
@@ -272,15 +290,17 @@ function Game() {
         ctx.fillText(`Tank: ${Math.round(myTank?.x || 0)}, ${Math.round(myTank?.y || 0)}`, 20, 50);
         ctx.fillText(`Cam: ${Math.round(camX)}, ${Math.round(camY)}`, 20, 70);
         ctx.fillText(`Screen: ${viewport.current.w} x ${viewport.current.h}`, 20, 90);
+        // Vẽ score
+        ctx.fillText(`Score: ${myTank?.score || 0}`, 20, 110);
     }
     
     animationFrameId.current = requestAnimationFrame(animate);
-  }, [isImageLoaded, isGunImageLoaded, isMapLoaded, drawMap, socket, viewport, tankMovingAnimationCB, tankGunAnimationCB, tankBulletAnimationCB, tankUpdatePosistionCB]);
+  }, [isImageLoaded, isGunImageLoaded, isLazeImageLoaded, isBulletImageLoaded, isTreeImageLoaded, isBushImageLoaded, isMapLoaded, isMapIconsLoaded, isItemImageLoaded, drawMapCB, socket, viewport, tankMovingAnimationCB, tankGunAnimationCB, tankBulletAnimationCB, tankUpdatePosistionCB]);
 
   useEffect(() => {
-    if (isImageLoaded) animationFrameId.current = requestAnimationFrame(animate);
+    if (isImageLoaded && isMapLoaded && isMapIconsLoaded) animationFrameId.current = requestAnimationFrame(animate);
     return () => { if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current); };
-  }, [animate, isImageLoaded]);
+  }, [animate, isImageLoaded, isMapLoaded, isMapIconsLoaded]);
 
   // Canvas full màn hình, không viền thừa
   return (

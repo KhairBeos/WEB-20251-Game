@@ -1,16 +1,21 @@
 import { BulletState, BulletInputBuffer, Bullet } from '../model/Bullet';
 import { MapCell } from '../model/MapData';
 import { bulletWallCollision } from '../collision/BulletWallCollision';
+import { TankState } from '../model/Tank';
+
+
 
 export class BulletStateManager {
   update(
     bulletState: BulletState,
     bulletInputBuffer: BulletInputBuffer,
+    tankState: TankState,
   ) {
     
     const bullets = bulletState.bulletStates;
 
     for (const pid in bulletInputBuffer) {
+      const tank = tankState.tankStates[pid];
       let inputs = bulletInputBuffer[pid];
       const now = Date.now();
       inputs = inputs.filter((i) => now - i.clientTimestamp <= 100);
@@ -18,18 +23,23 @@ export class BulletStateManager {
       // Tạo đạn
       for (const i of inputs) {
         console.log(`Creating bullet for player ${pid} with input:`, i);
-        const bid = `b_${pid}_${i.clientTimestamp}_${Math.random()}`;
-        bullets[bid] = {
-          id: bid,
-          ownerId: pid,
-          x: i.startX,
-          y: i.startY,
-          width: i.width,
-          height: i.height,
-          degree: i.degree,
-          speed: i.speed,
-          damage: i.damage,
-        } as Bullet;
+        const numBullets = Math.floor(tank.level / 5) + 1;
+        
+        for (let b = 0; b < numBullets; b++) {
+          const spreadAngle = (b - (numBullets - 1) / 2) * 20;
+          const bid = `b_${pid}_${i.clientTimestamp}_${Math.random()}`;
+          bullets[bid] = {
+            id: bid,
+            ownerId: pid,
+            x: i.startX,
+            y: i.startY,
+            width: i.width,
+            height: i.height,
+            degree: i.degree + spreadAngle,
+            speed: i.speed,
+            damage: tank.damage,
+          } as Bullet;
+        }
       }
       bulletInputBuffer[pid] = [];
       // Update đạn

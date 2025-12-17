@@ -1,8 +1,9 @@
 // hooks/useSocket.ts
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { SOCKET_URL } from '../GlobalSetting';
 
-const SOCKET_URL = 'http://localhost:3001'; // Thay bằng URL NestJS của bạn
+
 
 export const useSocket = () => {
   // useRef được sử dụng để giữ instance socket giữa các lần render
@@ -17,7 +18,10 @@ export const useSocket = () => {
     if (typeof window !== 'undefined') {
       const socket = io(SOCKET_URL, {
         // Thêm các options như transports, authentication token nếu cần
-        autoConnect: false, // Ngăn kết nối ngay lập tức
+        // autoConnect: false, // Ngăn kết nối ngay lập tức
+        query: {
+          name : "ano", // Ví dụ thêm tên người chơi ngẫu nhiên
+        }
       });
 
       socketRef.current = socket;

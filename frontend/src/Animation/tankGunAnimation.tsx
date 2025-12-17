@@ -106,9 +106,7 @@ export const tankGunAnimation = (
         }
       }
 
-      
-
-
+  
 
       ctx.drawImage(img, destX, destY, destWidth, destHeight);
      
