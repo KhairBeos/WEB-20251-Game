@@ -7,7 +7,11 @@ export type Tank = {
     width: number,
     height: number,
     radius: number,
-    maxHealth: number,
+  maxHealth: number,
+  // Shield value (optional) - amount of temporary shield points
+  shield?: number,
+  shieldUntil?: number, // shield expiration timestamp
+  lastHealthPickupTime?: number, // timestamp when health pickup consumed
     inBush: string,
 }
 
@@ -27,10 +31,32 @@ export interface TankState {
 }
 
 export interface TankAnimationState {
-    [playerId: string]: {
-        frameIndex: number,
-        frameCounter: number,
-        isMoving: boolean
-        
-    }
+  [playerId: string]: {
+    frameIndex: number,
+    frameCounter: number,
+    isMoving: boolean,
+    // last seen values to detect changes from server for transient indicators
+    lastSeen?: {
+      health?: number;
+      lastHealthPickupTime?: number;
+      shield?: number;
+      shieldUntil?: number;
+      speedBoostUntil?: number;
+      damageBoostUntil?: number;
+    };
+    // buff indicator expirations (ms since epoch)
+    buffExp?: {
+      health?: number;
+      shield?: number;
+      speed?: number;
+      damage?: number;
+    };
+    // metadata for buff durations (ms total at start)
+    buffMeta?: {
+      health?: number;
+      shield?: number;
+      speed?: number;
+      damage?: number;
+    };
+  }
 }

@@ -1,0 +1,8 @@
+<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Nền tối -->
+  <circle cx="20" cy="20" r="18" fill="rgba(0,0,0,0.6)" stroke="#2980b9" stroke-width="2"/>
+  
+  <!-- Icon tia sét -->
+  <path d="M22,8 L14,20 L20,20 L16,32 L26,18 L20,18 Z" 
+        fill="#3498db" />
+</svg>

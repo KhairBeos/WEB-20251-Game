@@ -23,3 +23,11 @@ export const BUSH_SELF_ALPHA = 0.55;
 // Giới hạn tối đa devicePixelRatio để cân bằng nét/hiệu năng
 export const MAX_DPR = 2;
 // Viewport dùng kích thước thật của cửa sổ; không ép bội số hay cố định
+
+// Kích thước icon vật phẩm (pickup). Giữ tối đa bằng 1 tile để không đè lên tường/trụ lân cận.
+export const PICKUP_ICON_SIZE = 40;
+// Kích thước hiển thị Tower (mặc định 2x2 tile = 80x80). Giữ nguyên nếu thấy ổn
+export const TOWER_DRAW_SIZE = 80;
+
+// Debug Mode: hiển thị lưới ô, viền va chạm, bán kính tank, pickup collision
+export const DEBUG_MODE = true;

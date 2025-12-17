@@ -3,7 +3,7 @@ import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import { tankBulletAnimation } from "../Animation/tankBulletAnimation";
 import { tankGunAnimation } from "../Animation/tankGunAnimation";
 import { tankMovingAnimation } from "../Animation/tankMovingAnimation";
-import { TILE_SIZE, MAX_DPR } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
+import { TILE_SIZE, MAX_DPR, DEBUG_MODE } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
 import { useGameInput } from "../Hook/useGameInput";
 import useLoadLazeBullet from "../Hook/useLoadLazeBullet";
 import useLoadTankBody from "../Hook/useLoadTankBody";
@@ -22,9 +22,8 @@ import useLoadBush from "../Hook/useLoadBush";
 import drawMap from "../Animation/drawMap";
 import useLoadGround from "../Hook/useLoadGround";
 import useLoadTower from "../Hook/useLoadTower";
-
-// --- BẬT DEBUG MODE: True để hiện khung va chạm ---
-const DEBUG_MODE = true; 
+import useLoadTankFeatures from "../Hook/useLoadTankFeatures";
+import useLoadMapIcons from "../Hook/useLoadMapIcons";
 
 function Game() {
   // --- STATE GAME ---
@@ -49,6 +48,8 @@ function Game() {
   const {imageRef:bushImageRef,isImageLoaded:isBushImageLoaded} =  useLoadBush()
   const {imageRef:groundImageRef,isImageLoaded:isGroundImageLoaded} =  useLoadGround()
   const {imageRef:towerRef,isImageLoaded:isTowerImageLoaded} =  useLoadTower()
+  const {imageRef:tankFeatureRef,isImageLoaded:isFeatureLoaded, images: tankFeatureImages} = useLoadTankFeatures()
+  const {images:mapIcons,isImageLoaded:isMapIconsLoaded} = useLoadMapIcons()
   
    const mapAssetsRef = useRef<any>({});
 
@@ -181,11 +182,12 @@ function Game() {
     treeImg: RefObject<HTMLImageElement[]>,
     towerImg: RefObject<HTMLImageElement[]>,
     bushImg: RefObject<HTMLImageElement[]>,
+    icons: typeof mapIcons,
     ctx: CanvasRenderingContext2D
   ) => {
     
-    drawMap(camX,camY,dynamicMap,viewPort,groundImg,treeImg,towerImg,bushImg,ctx)
-  },[isGroundImageLoaded,isTreeImageLoaded,isTowerImageLoaded,isBushImageLoaded, socket?.id])
+    drawMap(camX,camY,dynamicMap,viewPort,groundImg,treeImg,towerImg,bushImg,icons,ctx)
+  },[isGroundImageLoaded,isTreeImageLoaded,isTowerImageLoaded,isBushImageLoaded,isMapIconsLoaded, socket?.id])
 
 
   // --- 3. LOAD ASSETS ---
@@ -212,7 +214,7 @@ function Game() {
   // --- 5. GAME LOOP (ANIMATE) ---
   const animate = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !isImageLoaded || !isMapLoaded) { 
+    if (!canvas || !isImageLoaded || !isMapLoaded || !isMapIconsLoaded) { 
         animationFrameId.current = requestAnimationFrame(animate); 
         return; 
     }
@@ -255,12 +257,12 @@ function Game() {
     ctx.save();
     ctx.translate(-camX, -camY); // Dịch chuyển thế giới
 
-    drawMapCB(camX, camY, viewport, dynamicMap, groundImageRef, treeImageRef, towerRef, bushImageRef, ctx);
+    drawMapCB(camX, camY, viewport, dynamicMap, groundImageRef, treeImageRef, towerRef, bushImageRef, mapIcons, ctx);
     tankUpdatePosistion(keysPressed, tankGunAnimationState, socket); // Cập nhật vị trí tank dựa trên phím nhấn và gửi lên server
     tankMovingAnimationCB(ctx, tankStateRef, tankAnimationState, keysPressed, tankBodyImageRef);
     tankGunAnimationCB(ctx, tankStateRef, tankGunAnimationState, keysPressed, tankGunImageRef);
     tankBulletAnimationCB(ctx, bulletStateRef, bulletAnimationState, bulletImageRef);
-    tankHealthAnimation(ctx, tankStateRef, keysPressed);
+    tankHealthAnimation(ctx, tankStateRef, keysPressed, tankFeatureRef, tankFeatureImages, tankAnimationState);
 
     ctx.restore();
 
@@ -275,12 +277,12 @@ function Game() {
     }
     
     animationFrameId.current = requestAnimationFrame(animate);
-  }, [isImageLoaded, isGunImageLoaded, isMapLoaded, drawMap, socket, viewport, tankMovingAnimationCB, tankGunAnimationCB, tankBulletAnimationCB, tankUpdatePosistionCB]);
+  }, [isImageLoaded, isGunImageLoaded, isLazeImageLoaded, isBulletImageLoaded, isTreeImageLoaded, isBushImageLoaded, isMapLoaded, isMapIconsLoaded, isFeatureLoaded, drawMapCB, socket, viewport, tankMovingAnimationCB, tankGunAnimationCB, tankBulletAnimationCB, tankUpdatePosistionCB]);
 
   useEffect(() => {
-    if (isImageLoaded) animationFrameId.current = requestAnimationFrame(animate);
+    if (isImageLoaded && isMapLoaded && isMapIconsLoaded) animationFrameId.current = requestAnimationFrame(animate);
     return () => { if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current); };
-  }, [animate, isImageLoaded]);
+  }, [animate, isImageLoaded, isMapLoaded, isMapIconsLoaded]);
 
   // Canvas full màn hình, không viền thừa
   return (

@@ -1,13 +1,7 @@
 import { BulletState, BulletInputBuffer, Bullet } from '../model/Bullet';
-import { MapCell } from '../model/MapData';
-import { bulletWallCollision } from '../collision/BulletWallCollision';
 
 export class BulletStateManager {
-  update(
-    bulletState: BulletState,
-    bulletInputBuffer: BulletInputBuffer,
-  ) {
-    
+  update(bulletState: BulletState, bulletInputBuffer: BulletInputBuffer) {
     const bullets = bulletState.bulletStates;
 
     for (const pid in bulletInputBuffer) {

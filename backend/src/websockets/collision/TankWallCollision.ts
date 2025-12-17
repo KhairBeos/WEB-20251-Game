@@ -11,7 +11,7 @@ export function tankWallCollision(map: MapCell[][], tankStates: { [playerId: str
     const topRow = Math.floor((tank.y - R) / TILE_SIZE);
     const bottomRow = Math.floor((tank.y + R) / TILE_SIZE);
 
-    var inBush = "none";
+    let inBush = 'none';
 
     for (let row = topRow; row <= bottomRow; row++) {
       for (let col = leftCol; col <= rightCol; col++) {
@@ -28,17 +28,16 @@ export function tankWallCollision(map: MapCell[][], tankStates: { [playerId: str
         }
         const root = map[rootR][rootC];
         const val = root.val;
-       
-        // Bỏ qua vật thể không va chạm: đất (0), spawn (9),
-        if (val === 0 || val === 9) {
+
+        // Bỏ qua vật thể không va chạm: đất (0), spawn (9), pickups (101..104)
+        if (val === 0 || val === 9 || (val >= 101 && val <= 104)) {
           continue;
         }
- 
+
         // Nếu là bụi (11..14), set tank.inBush = true
-        if((val >= 11 && val <= 14))
-        {
+        if (val >= 11 && val <= 14) {
           inBush = `bush_${rootR}_${rootC}`;
-          continue
+          continue;
         }
 
         // Các vật thể còn lại coi là vật cản: tường/tower (1..4), cây viền (10)
@@ -54,7 +53,6 @@ export function tankWallCollision(map: MapCell[][], tankStates: { [playerId: str
           //console.log(`Distance to tile: dx=${distX.toFixed(2)}, dy=${distY.toFixed(2)}`);
 
           const distance = Math.sqrt(distX * distX + distY * distY);
-          const minDistance = R + TILE_SIZE / 2;
 
           if (distance === 0) {
             tank.x += tank.radius;
@@ -95,7 +93,7 @@ export function tankWallCollision(map: MapCell[][], tankStates: { [playerId: str
         }
       }
     }
-    
+
     // Cập nhật trạng thái inBush của tank
     tank.inBush = inBush;
   }

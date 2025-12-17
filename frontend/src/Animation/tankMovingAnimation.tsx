@@ -1,7 +1,7 @@
 import { RefObject } from "react";
 import { KeyMap } from "../Model/KeyMap";
 import { TankAnimationState, TankState } from "../Model/Tank";
-import { ANIMATION_SPEED, BUSH_SELF_ALPHA } from "../GlobalSetting"; // Chuyển khung hình sau mỗi X frame game (Tốc độ chuyển động: 60fps / 6 = 10 khung hình/giây)
+import { ANIMATION_SPEED, BUSH_SELF_ALPHA, DEBUG_MODE } from "../GlobalSetting"; // Chuyển khung hình sau mỗi X frame game (Tốc độ chuyển động: 60fps / 6 = 10 khung hình/giây)
 
 export const tankMovingAnimation = (
   ctx: CanvasRenderingContext2D,
@@ -102,17 +102,17 @@ export const tankMovingAnimation = (
       }
       ctx.drawImage(img, destX, destY, destWidth, destHeight);
       
-      // Loại bỏ viền xanh khi ở trong bụi
-
-      // Debug hitbox (có thể tắt nếu cần)
-      // ctx.strokeStyle = "red";
-      // ctx.lineWidth = 2;
-      // ctx.strokeRect(destX, destY, destWidth, destHeight);
-      // ctx.beginPath();
-      // ctx.arc(0, 0, p.radius, 0, 2 * Math.PI);
-      // ctx.strokeStyle = "blue";
-      // ctx.lineWidth = 2;
-      // ctx.stroke();
+      // Debug: Hiển thị bounding box tank và bán kính va chạm
+      if (DEBUG_MODE) {
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(destX, destY, destWidth, destHeight);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = "blue";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
     
       ctx.restore();
     }

@@ -1,10 +1,7 @@
-import { MAP_ROWS, MAP_COLS, TILE_SIZE, MapCell } from '../model/MapData';
 import { TankState, TankInputBuffer } from '../model/Tank';
-import { tankCollision } from '../collision/TankCollision';
-import { tankWallCollision } from '../collision/TankWallCollision';
 
 const TANK_ROTATE_SPEED = 3;
-const SPEED = 4;
+const BASE_SPEED = 4;
 const SHOOT_COOLDOWN = 1000;
 
 export class TankStateManager {
@@ -27,9 +24,9 @@ export class TankStateManager {
     ) => void,
   ) {
     // Xoa tanks hết máu
-    for(const pid in tankState.tankStates) {
+    for (const pid in tankState.tankStates) {
       const tank = tankState.tankStates[pid];
-      if(tank.health <= 0) {
+      if (tank.health <= 0) {
         delete tankState.tankStates[pid];
       }
     }
@@ -43,6 +40,16 @@ export class TankStateManager {
       inputs = inputs.filter((i) => Date.now() - i.clientTimestamp <= 100);
 
       let newDegree = tank.degree;
+      // Expire buffs if needed
+      const nowTs = Date.now();
+      if (tank.speedBoostUntil && nowTs > tank.speedBoostUntil) {
+        tank.speedBoostUntil = 0;
+        tank.speedMultiplier = 1;
+      }
+      if (tank.damageBoostUntil && nowTs > tank.damageBoostUntil) {
+        tank.damageBoostUntil = 0;
+        tank.damageMultiplier = 1;
+      }
       for (const input of inputs) {
         // xoay
         switch (input.rotate) {
@@ -57,56 +64,20 @@ export class TankStateManager {
         // di chuyển
         let deltaX = 0,
           deltaY = 0;
+        const effectiveSpeed = BASE_SPEED * (tank.speedMultiplier ?? 1);
         switch (input.direction) {
           case 'forward':
-            deltaX = SPEED * Math.sin(angleInRadians);
-            deltaY = -SPEED * Math.cos(angleInRadians);
+            deltaX = effectiveSpeed * Math.sin(angleInRadians);
+            deltaY = -effectiveSpeed * Math.cos(angleInRadians);
             break;
           case 'backward':
-            deltaX = -SPEED * Math.sin(angleInRadians);
-            deltaY = SPEED * Math.cos(angleInRadians);
+            deltaX = -effectiveSpeed * Math.sin(angleInRadians);
+            deltaY = effectiveSpeed * Math.cos(angleInRadians);
             break;
         }
         tank.x += deltaX;
         tank.y += deltaY;
         tank.degree = newDegree;
-
-        // // cập nhật trạng thái bụi
-        // const rc = { r: Math.floor(tank.y / TILE_SIZE), c: Math.floor(tank.x / TILE_SIZE) };
-        // if (rc.r >= 0 && rc.r < MAP_ROWS && rc.c >= 0 && rc.c < MAP_COLS) {
-        //   const cell = currentMap[rc.r][rc.c];
-        //   let rootR: number;
-        //   let rootC: number;
-        //   let rootVal: number;
-        //   if (cell.val === 99) {
-        //     rootR = cell.root_r;
-        //     rootC = cell.root_c;
-        //     if (rootR < 0 || rootR >= MAP_ROWS || rootC < 0 || rootC >= MAP_COLS) {
-        //       tank.inBush = false;
-        //       tank.bushRootR = undefined;
-        //       tank.bushRootC = undefined;
-        //       continue;
-        //     }
-        //     rootVal = currentMap[rootR][rootC].val;
-        //   } else {
-        //     rootR = rc.r;
-        //     rootC = rc.c;
-        //     rootVal = cell.val;
-        //   }
-        //   if (rootVal >= 11 && rootVal <= 14) {
-        //     tank.inBush = true;
-        //     tank.bushRootR = rootR;
-        //     tank.bushRootC = rootC;
-        //   } else {
-        //     tank.inBush = false;
-        //     tank.bushRootR = undefined;
-        //     tank.bushRootC = undefined;
-        //   }
-        // } else {
-        //   tank.inBush = false;
-        //   tank.bushRootR = undefined;
-        //   tank.bushRootC = undefined;
-        // }
 
         // bắn
         const now = Date.now();
@@ -115,6 +86,7 @@ export class TankStateManager {
           if (timeSinceLastShot >= SHOOT_COOLDOWN) {
             tank.lastShootTimestamp = now;
             console.log(`Tank ${pid} fired a bullet.`);
+            const damageMul = tank.damageMultiplier ?? 1;
             handleBulletFire(pid, {
               clientTimestamp: now,
               startX: tank.x + (tank.width / 2) * Math.sin(angleInRadians),
@@ -123,7 +95,7 @@ export class TankStateManager {
               height: 36,
               degree: tank.degree,
               speed: 10,
-              damage: 10,
+              damage: Math.round(10 * damageMul),
               ownerId: pid,
             });
           }
