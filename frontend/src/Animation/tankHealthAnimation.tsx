@@ -59,7 +59,11 @@ export const tankHealthAnimation = (
         ctx.textAlign = "right";
         ctx.fillText(`Lv.${p.level}`, healthBarX - 10, healthBarY + healthBarHeight);
 
-        // Vẽ điểm ở góc trái màn hình
+        // Vẽ số máu bên phải thanh máu
+        ctx.fillStyle = "white";
+        ctx.font = "14px Arial";
+        ctx.textAlign = "left";
+        ctx.fillText(`${p.health}/${p.maxHealth}`, healthBarX + healthBarWidth + 10, healthBarY + healthBarHeight);
         
 
       ctx.restore();

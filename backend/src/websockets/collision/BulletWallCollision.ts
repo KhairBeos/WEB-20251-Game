@@ -35,7 +35,7 @@ export function bulletWallCollision(
     // --- XỬ LÝ BẮN TRÚNG MAP ---
     const c = Math.floor(bullet.x / TILE_SIZE);
     const r = Math.floor(bullet.y / TILE_SIZE);
-    console.log(`Bullet ${bid} at (${bullet.x.toFixed(2)}, ${bullet.y.toFixed(2)}) is in tile (${r}, ${c})`);
+    // console.log(`Bullet ${bid} at (${bullet.x.toFixed(2)}, ${bullet.y.toFixed(2)}) is in tile (${r}, ${c})`);
 
     if (r < 0 || r >= MAP_ROWS || c < 0 || c >= MAP_COLS) {
       removedBullets.push(bid); // Đạn bay ra ngoài bản đồ
@@ -52,13 +52,13 @@ export function bulletWallCollision(
 
     // 1. Bắn trúng Tường (1-4) -> Phá hủy
     if (root.val >= 1 && root.val <= 4) {
-      console.log(`Bullet ${bid} hit wall at (${r}, ${c})`);
+      // console.log(`Bullet ${bid} hit wall at (${r}, ${c})`);
       map[rootR][rootC].val -= 1; // Trừ máu
       const newVal = map[rootR][rootC].val;
 
       if (newVal === 0) {
         tankState.tankStates[bullet.ownerId].score += 5; // Cộng điểm cho người bắn
-        console.log(`Player ${bullet.ownerId} scored 5 points for destroying a wall. Total score: ${tankState.tankStates[bullet.ownerId].score}`);
+        // console.log(`Player ${bullet.ownerId} scored 5 points for destroying a wall. Total score: ${tankState.tankStates[bullet.ownerId].score}`);
         // Phá hủy hoàn toàn: Xóa cả 4 ô (2x2)
         map[rootR][rootC] = { root_r: -1, root_c: -1, val: 0 };
         map[rootR][rootC + 1] = { root_r: -1, root_c: -1, val: 0 };
@@ -72,7 +72,7 @@ export function bulletWallCollision(
         server.emit('mapUpdate', { r: rootR + 1, c: rootC + 1, cell: map[rootR + 1][rootC + 1] });
       } else {
         // Chỉ nứt tường
-        console.log(`map update cell at (${rootR}, ${rootC}) to cell=${newVal}`);
+        // console.log(`map update cell at (${rootR}, ${rootC}) to cell=${newVal}`);
         console.log(map[rootR][rootC]);
         server.emit('mapUpdate', { r: rootR, c: rootC, cell: map[rootR][rootC] });
       }

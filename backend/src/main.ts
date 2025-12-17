@@ -7,7 +7,8 @@ async function bootstrap() {
 
   // Bật CORS
   app.enableCors({
-    origin: 'http://localhost:3000', // Chỉ cho phép frontend của bạn gọi
+    // all origins are allowed
+    origin: '*',
   });
 
   //app.useGlobalPipes(new ValidationPipe());

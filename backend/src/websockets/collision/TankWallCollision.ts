@@ -33,6 +33,7 @@ export function tankWallCollision(map: MapCell[][], tankStates: { [playerId: str
         if (val === 0 || val === 9) {
           continue;
         }
+        
  
         // Nếu là bụi (11..14), set tank.inBush = true
         if((val >= 11 && val <= 14))

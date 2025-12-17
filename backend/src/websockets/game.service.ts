@@ -84,6 +84,7 @@ export class GameService implements OnModuleInit {
       level: 1,
       score: 0,
       speed: 2,
+      damage: 10,
       id: id,
       x: spawn.c * TILE_SIZE + TILE_SIZE / 2,
       y: spawn.r * TILE_SIZE + TILE_SIZE / 2,
@@ -197,6 +198,8 @@ export class GameService implements OnModuleInit {
         console.log(`Player ${pid} score: ${tank.score}, leveling up from ${tank.level} to ${newLevel}`);
         tank.level = newLevel;
         tank.speed = 2 + (newLevel - 1) * 0.2; // Tăng tốc độ theo level
+        tank.maxHealth = 100 + (newLevel - 1) * 10; // Tăng maxHealth theo level
+        tank.damage = 10 + (newLevel - 1) * 2; // Tăng damage theo level
         console.log(`Player ${pid} leveled up to ${newLevel}`);
       }
     }

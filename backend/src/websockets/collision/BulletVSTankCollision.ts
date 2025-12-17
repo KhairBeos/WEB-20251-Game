@@ -17,10 +17,12 @@ export function bulletVSTankCollision(tankStates: { [playerId: string]: Tank } ,
             if (distance < minDistance) {
                 // Xử lý va chạm: giảm máu tank và loại bỏ viên đạn
                 tankStates[tank.id].health -= bullet.damage;
+                console.log(`Bullet ${bullet.id} hit Tank ${tank.id}. Tank health is now ${tankStates[tank.id].health}`);
                 delete bulletState[bid];
                 if(tankStates[tank.id].health < 0) {
                     tankStates[bullet.ownerId].score += 10; // Cộng điểm cho người bắn
                 }
+                // 
 
                 break; // Viên đạn đã va chạm, không cần kiểm tra với các tank khác
             }

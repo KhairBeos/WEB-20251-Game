@@ -14,6 +14,7 @@ export interface Tank {
   speed: number;
   score: number;
   level: number;
+  damage: number;
 }
 
 export interface TankInput {

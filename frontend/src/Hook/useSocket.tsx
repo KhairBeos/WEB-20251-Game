@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = 'http://localhost:3001'; // Thay bằng URL NestJS của bạn
+const SOCKET_URL = 'http://10.13.59.246:3001'; // Thay bằng URL NestJS của bạn
 
 export const useSocket = () => {
   // useRef được sử dụng để giữ instance socket giữa các lần render

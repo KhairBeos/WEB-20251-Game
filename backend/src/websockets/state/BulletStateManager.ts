@@ -20,7 +20,6 @@ export class BulletStateManager {
       const now = Date.now();
       inputs = inputs.filter((i) => now - i.clientTimestamp <= 100);
 
-
       // Tạo đạn
       for (const i of inputs) {
         console.log(`Creating bullet for player ${pid} with input:`, i);
@@ -38,7 +37,7 @@ export class BulletStateManager {
             height: i.height,
             degree: i.degree + spreadAngle,
             speed: i.speed,
-            damage: i.damage,
+            damage: tank.damage,
           } as Bullet;
         }
       }
