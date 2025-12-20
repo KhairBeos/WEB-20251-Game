@@ -1,52 +1,63 @@
 import { useEffect, useRef, useState } from "react";
-const FRAMES = [
-  "/tankgun-frames/sprite-1-1.png", // Frame 1
-  "/tankgun-frames/sprite-1-2.png", // Frame 2
-  "/tankgun-frames/sprite-1-3.png", // Frame 1
-  "/tankgun-frames/sprite-1-4.png", // Frame 2
-  "/tankgun-frames/sprite-1-5.png", // Frame 1
-  "/tankgun-frames/sprite-1-6.png", // Frame 2
-  "/tankgun-frames/sprite-1-7.png", // Frame 1
-  "/tankgun-frames/sprite-1-8.png", // Frame 2
-  "/tankgun-frames/sprite-1-9.png", // Frame 1
-  "/tankgun-frames/sprite-1-10.png", // Frame 2
-  "/tankgun-frames/sprite-1-11.png", // Frame 1
-];
-const TOTAL_FRAMES = FRAMES.length;
+
+const SKIN_IDS = ["scarlet", "desert", "ocean", "lemon", "violet"];
+const FRAME_COUNT = 11;
+
+// Map skin id to file prefix
+const SKIN_PREFIX_MAP: Record<string, string> = {
+  scarlet: "sprite-1-",
+  desert: "desert1.",
+  ocean: "ocean1.",
+  lemon: "lemon1.",
+  violet: "violet1.",
+};
 
 function useLoadTankGun() {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  // Store gun frames per skin: { scarlet: [img1, img2...], desert: [...], ... }
+  const skinGunFramesRef = useRef<Record<string, HTMLImageElement[]>>({});
+  // Also keep default frames for backwards compat
+  const imageRef = useRef<HTMLImageElement[]>([]);
 
-    const imageRef = useRef<HTMLImageElement[]>([]);
-    useEffect(() => {
-        let tankBodyLoadedCount = 0;
-    
-        const loadedImages: HTMLImageElement[] = [];
-    
-        // Khởi tạo và tải từng ảnh
-        FRAMES.forEach((url, index) => {
-          const img = new Image();
-          img.src = url;
-    
-          img.onload = () => {
-            console.log(img.width);
-            loadedImages[index] = img; // Lưu trữ ảnh vào vị trí chính xác
-            tankBodyLoadedCount++;
-    
-            // Nếu tất cả ảnh đã tải xong
-            if (tankBodyLoadedCount === TOTAL_FRAMES) {
-              imageRef.current = loadedImages;
-              setIsImageLoaded(true); // Đánh dấu là đã sẵn sàng
-            }
-          };
-    
-          img.onerror = () => {
-            console.error(`Không thể tải frame ảnh: ${url}`);
-          };
-        });
-    
-      }, []);
-    return ({isImageLoaded, imageRef});
+  useEffect(() => {
+    const totalFramesToLoad = SKIN_IDS.length * FRAME_COUNT;
+    let loadedCount = 0;
+    const allFrames: Record<string, HTMLImageElement[]> = {};
+
+    SKIN_IDS.forEach((skinId) => {
+      allFrames[skinId] = [];
+      const prefix = SKIN_PREFIX_MAP[skinId] || "sprite-1-";
+
+      for (let i = 1; i <= FRAME_COUNT; i++) {
+        const img = new Image();
+        img.src = `/tankgun-frames/${prefix}${i}.png`;
+
+        img.onload = () => {
+          allFrames[skinId][i - 1] = img;
+          loadedCount++;
+
+          if (loadedCount === totalFramesToLoad) {
+            skinGunFramesRef.current = allFrames;
+            // Set default (scarlet) frames for backwards compat
+            imageRef.current = allFrames["scarlet"] || [];
+            setIsImageLoaded(true);
+          }
+        };
+
+        img.onerror = () => {
+          console.error(`Cannot load gun frame: /tankgun-frames/${prefix}${i}.png`);
+          loadedCount++;
+          if (loadedCount === totalFramesToLoad) {
+            skinGunFramesRef.current = allFrames;
+            imageRef.current = allFrames["scarlet"] || [];
+            setIsImageLoaded(true);
+          }
+        };
+      }
+    });
+  }, []);
+
+  return { isImageLoaded, imageRef, skinGunFramesRef };
 }
 
 export default useLoadTankGun;
