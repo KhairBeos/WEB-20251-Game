@@ -30,8 +30,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
   // Xử lý khi Client kết nối
   handleConnection(@ConnectedSocket() client: Socket) {
-    // Thêm người chơi vào Game Service
-    this.gameService.addPlayer(client.id);
+    // Thêm người chơi vào Game Service, kèm skin nếu client truyền qua auth
+    const skin = (client.handshake.auth as { skin?: string } | undefined)?.skin;
+    this.gameService.addPlayer(client.id, skin);
     // Thêm client vào một phòng chung (nếu đây là game 1 phòng)
     // client.join('main_room');
   }
@@ -45,14 +46,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
   // Lắng nghe input di chuyển từ Client
   // Dữ liệu client gửi lên: socket.emit('playerInput', { direction: 'right' });
   @SubscribeMessage('tankInput')
-  handleMove(
-    @MessageBody() tankInput: TankInput,
-    @ConnectedSocket() client: Socket,
-  ): void {
+  handleMove(@MessageBody() tankInput: TankInput, @ConnectedSocket() client: Socket): void {
     // Chuyển input đến Game Service để xử lý trong vòng lặp game
     //console.log(`Received input from ${client.id}:`, tankInput);
     //console.log("received input")
     this.gameService.handleTankInput(client.id, tankInput);
+  }
+
+  @SubscribeMessage('setSkin')
+  handleSetSkin(@MessageBody() skin: string, @ConnectedSocket() client: Socket): void {
+    this.gameService.setPlayerSkin(client.id, skin);
   }
 
   // @SubscribeMessage('bulletInput')

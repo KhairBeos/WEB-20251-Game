@@ -8,7 +8,12 @@ export const tankMovingAnimation = (
   tankState: RefObject<TankState>,
   tankAnimationState: RefObject<TankAnimationState>,
   keysPressed: RefObject<KeyMap>,
-  frames: RefObject<HTMLImageElement[]>
+  frames: RefObject<HTMLImageElement[]>,
+  customSkin?: {
+    playerId?: string | null;
+    image?: HTMLImageElement | null;
+    skinImages?: Record<string, HTMLImageElement | undefined>;
+  },
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
@@ -65,7 +70,12 @@ export const tankMovingAnimation = (
       ctx.rotate(angleInRadians);
 
       // Lấy đối tượng Image tương ứng với khung hình hiện tại
-      const img = frames.current[animState.frameIndex];
+      const skinImg =
+        (customSkin?.skinImages && p.skin ? customSkin.skinImages[p.skin] : null) ||
+        customSkin?.image ||
+        null;
+      const defaultImg = frames.current[animState.frameIndex];
+      const img = skinImg || defaultImg;
       if (!img) {
         ctx.restore();
         return;

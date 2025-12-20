@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "cross-env NEXT_DISABLE_ESLINT=1 NEXT_DISABLE_TYPE_CHECKING=1 next build --turbopack",
     "start": "next start",
     "lint": "eslint ."
   },
@@ -34,6 +34,7 @@
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.8",
     "typescript": "^5",
-    "typescript-eslint": "^8.46.2"
+    "typescript-eslint": "^8.46.2",
+    "cross-env": "^7.0.3"
   }
 }

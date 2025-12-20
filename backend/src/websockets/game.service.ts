@@ -57,12 +57,11 @@ export class GameService implements OnModuleInit {
     setInterval(() => this.gameLoop(), this.GAME_TICK_RATE);
   }
 
-  addPlayer(id: string) {
+  addPlayer(id: string, skin?: string) {
     // Khởi tạo trạng thái input
     this.tankInputBuffer[id] = [];
     this.bulletInputBuffer[id] = [];
 
-    
     const spawn =
       SPAWNPOINTS.length > 0
         ? SPAWNPOINTS[Math.floor(Math.random() * SPAWNPOINTS.length)]
@@ -72,8 +71,8 @@ export class GameService implements OnModuleInit {
 
     this.tankState.tankStates[id] = {
       id: id,
-       x: spawn.c * TILE_SIZE + TILE_SIZE / 2,
-       y: spawn.r * TILE_SIZE + TILE_SIZE / 2,
+      x: spawn.c * TILE_SIZE + TILE_SIZE / 2,
+      y: spawn.r * TILE_SIZE + TILE_SIZE / 2,
       // x: 5 * TILE_SIZE,
       // y: 5 * TILE_SIZE,
       degree: Math.floor(Math.random() * 360),
@@ -83,6 +82,7 @@ export class GameService implements OnModuleInit {
       height: 86,
       radius: 86 / 2,
       lastShootTimestamp: 0,
+      skin: skin || 'scarlet',
     };
 
     this.bulletState.bulletStates[id] = {};
@@ -103,6 +103,13 @@ export class GameService implements OnModuleInit {
     delete this.bulletInputBuffer[id];
     delete this.tankInputBuffer[id];
     delete this.tankState.tankStates[id];
+  }
+
+  setPlayerSkin(id: string, skin: string) {
+    if (this.tankState.tankStates[id]) {
+      this.tankState.tankStates[id].skin = skin;
+      this.logger.log(`Player ${id} set skin to ${skin}`);
+    }
   }
 
   handleBulletFire(id: string, bulletInput: BulletInput) {
@@ -132,23 +139,23 @@ export class GameService implements OnModuleInit {
   // Vòng lặp game - Cập nhật trạng thái và gửi đi
   private gameLoop() {
     // 1. Cập nhật logic game dựa trên input
-    
+
     // // Cập nhật lưới không gian
     // this.gridSpatial.updateGrid(
-      //   Object.values(this.tankState.tankStates),
-      //   Object.values(this.bulletState.bulletStates).flatMap((bullets) => Object.values(bullets)),
-      // );
-      
-      // // Kiếm tra va chạm đạn và tank
+    //   Object.values(this.tankState.tankStates),
+    //   Object.values(this.bulletState.bulletStates).flatMap((bullets) => Object.values(bullets)),
+    // );
+
+    // // Kiếm tra va chạm đạn và tank
     // var collisions = bulletVSTankCollision(
-      //   Object.values(this.tankState.tankStates),
-      //   Object.values(this.bulletState.bulletStates).flatMap((bullets) => Object.values(bullets)),
-      //   this.gridSpatial,
-      // );
-      
-      // // Xử lý va chạm
-      // collisions.forEach((collision) => {
-        //   const bulletOwnerId = collision.bulletId.split('_')[1];
+    //   Object.values(this.tankState.tankStates),
+    //   Object.values(this.bulletState.bulletStates).flatMap((bullets) => Object.values(bullets)),
+    //   this.gridSpatial,
+    // );
+
+    // // Xử lý va chạm
+    // collisions.forEach((collision) => {
+    //   const bulletOwnerId = collision.bulletId.split('_')[1];
     //   if (!this.bulletState.bulletStates[bulletOwnerId]) return;
     //   const bullet = this.bulletState.bulletStates[bulletOwnerId][collision.bulletId];
     //   const tank = this.tankState.tankStates[collision.tankId];
@@ -160,7 +167,7 @@ export class GameService implements OnModuleInit {
     //     delete this.bulletState.bulletStates[bulletOwnerId][collision.bulletId];
     //     // Kiểm tra tank bị hạ gục
     //     if (tank.health <= 0) {
-      //       console.log(`Tank ${tank.id} destroyed!`);
+    //       console.log(`Tank ${tank.id} destroyed!`);
     //       // Xử lý tank bị hạ gục (ví dụ: đặt lại vị trí, hồi máu, v.v.)
     //       tank.health = tank.maxHealth;
     //       tank.x = 0;
@@ -168,8 +175,7 @@ export class GameService implements OnModuleInit {
     //     }
     //   }
     // });
-    
-    
+
     // 2. Gửi trạng thái game MỚI đến tất cả client
     if (this.server) {
       this.updateGameLogic();
@@ -183,7 +189,6 @@ export class GameService implements OnModuleInit {
       this.server.emit('bulletState', this.bulletState);
     }
   }
-
 
   // // --- CHECK VA CHẠM TỔNG HỢP ---
   // private checkCollision(x: number, y: number, width: number, height: number): boolean {
@@ -271,7 +276,7 @@ export class GameService implements OnModuleInit {
 
   private updateGameLogic() {
     const SPEED = 4;
-   
+
     for (const pid in this.tankInputBuffer) {
       const tank = this.tankState.tankStates[pid];
       if (!tank) continue;
