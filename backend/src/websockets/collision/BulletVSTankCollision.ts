@@ -6,6 +6,7 @@ export function bulletVSTankCollision(
   tankStates: { [playerId: string]: Tank },
   bulletState: { [playerId: string]: Bullet },
   grid: GridSpatial,
+  server: any,
 ) {
   for (const bid in bulletState) {
     const bullet = bulletState[bid];
@@ -35,6 +36,7 @@ export function bulletVSTankCollision(
         if (dmg > 0) {
           t.health -= dmg;
         }
+        server.emit('hitTank', tank.id);
         delete bulletState[bid];
         break; // Viên đạn đã va chạm, không cần kiểm tra với các tank khác
       }

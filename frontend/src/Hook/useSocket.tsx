@@ -23,6 +23,7 @@ export const useSocket = () => {
           name : "ano", // Ví dụ thêm tên người chơi ngẫu nhiên
         }
       });
+      
 
       socketRef.current = socket;
       socket.connect(); // Bắt đầu kết nối

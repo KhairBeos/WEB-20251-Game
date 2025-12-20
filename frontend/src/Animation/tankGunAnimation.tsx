@@ -11,7 +11,9 @@ export const tankGunAnimation = (
   keysPressed: RefObject<KeyMap>,
   frames: RefObject<HTMLImageElement[]>,
   viewerId?: string,
+  fireSoundRef?: RefObject<HTMLAudioElement>,
 ) => {
+ 
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
     const tankStates = tankState.current.tankStates;
@@ -34,15 +36,13 @@ export const tankGunAnimation = (
         };
       }
       
-       if(tankGunAnimationState.current[playerId].isFiring 
-        && tankGunAnimationState.current[playerId].lastAnimationTime > p.lastShootTimestamp 
-        && p.lastShootTimestamp + 1000 > Date.now()) {
-          tankGunAnimationState.current[playerId].isFiring = false;
-        }
-      
       const animState = tankGunAnimationState.current[playerId];
       // Nếu nhân vật đang di chuyển, cập nhật hoạt ảnh
       if (animState.isFiring) {
+        // Phát âm thanh bắn
+        if(fireSoundRef && fireSoundRef.current && animState.frameCounter === 0 && animState.frameIndex === 0) {
+          fireSoundRef.current.play();
+        }
         animState.frameCounter++;
         //console.log(animState.frameIndex, animState.frameCounter);
         if (animState.frameCounter >= 5) {
@@ -106,11 +106,7 @@ export const tankGunAnimation = (
         }
       }
 
-  
-
       ctx.drawImage(img, destX, destY, destWidth, destHeight);
-     
-
       ctx.restore();
     }
   };

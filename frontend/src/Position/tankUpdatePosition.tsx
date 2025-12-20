@@ -39,14 +39,10 @@ export const tankUpdatePosistion = (
      
     if (keys["s"]) tankInput.direction = 'backward';
 
-    if( keys["j"] ) {
-      tankInput.isFire = true;
-      tankGunAnimationState.current[playerId].isFiring = true;
-    }
+    if( keys["j"] ) tankInput.isFire = true;
 
     // Gửi trạng thái đầu vào của người chơi lên server
     if(socket){
-     
       socket.emit('tankInput', tankInput);
     }
 

@@ -8,6 +8,7 @@ export interface Bullet {
   speed: number;
   damage: number;
   ownerId: string;
+  timeFired: number;
 }
 export interface BulletInput {
   clientTimestamp: number;
@@ -19,6 +20,7 @@ export interface BulletInput {
   speed: number;
   damage: number;
   ownerId: string;
+  timeFired: number;
 }
 
 export interface BulletState {

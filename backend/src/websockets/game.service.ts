@@ -183,6 +183,7 @@ export class GameService implements OnModuleInit {
         this.tankState,
         this.tankInputBuffer,
         this.handleBulletFire.bind(this) as unknown as (pid: string, payload: any) => void,
+        this.server,
       );
 
       this.bulletManager.update(this.bulletState, this.bulletInputBuffer, this.tankState);
@@ -214,6 +215,7 @@ export class GameService implements OnModuleInit {
         this.tankState.tankStates,
         this.bulletState.bulletStates,
         this.gridSpatial,
+        this.server
       );
 
       this.gameLogicLoop();
@@ -230,27 +232,21 @@ export class GameService implements OnModuleInit {
   }
 
   private gameLogicLoop() {
-    // Kiểm tra các tank đã chết
-    for (const pid in this.tankState.tankStates) {
-      const tank = this.tankState.tankStates[pid];
-      if (tank.health <= 0) {
-      }
-    }
-
+    
     // Cập nhât level dựa trên điểm số, mỗi 1 cấp độ 10 điểm
     for (const pid in this.tankState.tankStates) {
       const tank = this.tankState.tankStates[pid];
       const newLevel = Math.floor(tank.score / 10) + 1;
       if (newLevel !== tank.level) {
-        // console.log(
-        //   `Player ${pid} score: ${tank.score}, leveling up from ${tank.level} to ${newLevel}`,
-        // );
         const lvDiff = newLevel - tank.level;
 
         tank.level = newLevel;
         tank.maxHealth += lvDiff * 20;
         tank.damage += lvDiff * 1;
         tank.speed += lvDiff * 0.2;
+
+        tank.damage = Math.min(tank.damage, 50); // giới hạn damage max
+        tank.speed = Math.min(tank.speed, 20); // giới hạn speed max
         // console.log(`Player ${pid} leveled up to ${newLevel}`);
       }
     }

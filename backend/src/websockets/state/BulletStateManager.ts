@@ -38,6 +38,7 @@ export class BulletStateManager {
             degree: i.degree + spreadAngle,
             speed: i.speed,
             damage: tank.damage,
+            timeFired: now,
           } as Bullet;
         }
       }
@@ -47,6 +48,14 @@ export class BulletStateManager {
         const b = bullets[bid];
         b.x += b.speed * Math.sin((b.degree * Math.PI) / 180);
         b.y -= b.speed * Math.cos((b.degree * Math.PI) / 180);
+      }
+
+      // Kiểm tra đạn tồn tại quá lâu (5 giây)
+      for (const bid in bullets) {
+        const b = bullets[bid];
+        if (now - b.timeFired > 5000) {
+          delete bullets[bid];
+        }
       }
     }
   }

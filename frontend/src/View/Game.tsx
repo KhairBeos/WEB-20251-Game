@@ -29,6 +29,7 @@ import Scoreboard from "./Scoreboard";
 import useLoadTankFeatures from "../Hook/useLoadTankFeatures";
 import useLoadMapIcons from "../Hook/useLoadMapIcons";
 import useLoadItem from "../Hook/useLoadTankFeatures";
+import { SoundState } from "../Model/Sound";
 
 function Game() {
   // Lấy ra object chứa các query parameter
@@ -61,6 +62,15 @@ function Game() {
   const {imageRef:towerRef,isImageLoaded:isTowerImageLoaded} =  useLoadTower()
   const {imageRef:itemRef,isImageLoaded:isItemImageLoaded} = useLoadItem()
   const {images:mapIcons,isImageLoaded:isMapIconsLoaded} = useLoadMapIcons()
+
+  // LOAD SOUND
+  const fireSoundRef = useRef<HTMLAudioElement>(new Audio('/sound/FireSound.mp3'));
+  const hitSoundRef = useRef<HTMLAudioElement>(new Audio('/sound/onHitSound.mp3'));
+  const itemSoundRef = useRef<HTMLAudioElement>(new Audio('/sound/ItemSound.mp3'));
+  const backgroundMusicRef = useRef<HTMLAudioElement>(new Audio('/sound/backGroundSound.mp3'));
+
+  // --- TẠO CÁC REF LƯU TRẠNG THÁI ---
+  // Ref để theo dõi trạng thái tank từ server
   
    const mapAssetsRef = useRef<any>({});
 
@@ -96,7 +106,7 @@ function Game() {
           }
       };
       handleResize(); // Gọi ngay lần đầu để khớp 100vw/100vh
-      window.addEventListener('resize', handleResize);
+      // window.addEventListener('resize', handleResize);
       return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -133,7 +143,12 @@ function Game() {
       // });
       socket.on('tankState', (s) => tankStateRef.current = s);
       socket.on('bulletState', (s) => bulletStateRef.current = s);
-
+      socket.on('fireBullet', (playerId) => {
+        tankGunAnimationState.current[playerId].isFiring = true;
+      })
+      socket.on('hitTank', (playerId) => {
+        tankAnimationState.current[playerId].onHit.isOnHit = true;
+      });
       // Nhận Map ban đầu
       socket.on('mapData', ({ map }) => dynamicMap.current = map);
       
@@ -158,7 +173,7 @@ function Game() {
     tankAnimationState: RefObject<TankAnimationState>,
     keysPressed: RefObject<KeyMap>,
     frames: RefObject<HTMLImageElement[]>,
-  ) => tankMovingAnimation(ctx,tankState,tankAnimationState,keysPressed,frames, socket?.id),[isImageLoaded, socket?.id])
+  ) => tankMovingAnimation(ctx,tankState,tankAnimationState,keysPressed,frames, socket?.id, hitSoundRef),[isImageLoaded, socket?.id,hitSoundRef])
 
   // Animation cho tank gun
   const tankGunAnimationCB = useCallback((
@@ -167,7 +182,7 @@ function Game() {
     tankGunAnimationState: RefObject<TankGunAnimationState>,
     keysPressed: RefObject<KeyMap>,
     frames: RefObject<HTMLImageElement[]>,
-  ) => tankGunAnimation(ctx,tankState,tankGunAnimationState,keysPressed,frames, socket?.id),[isGunImageLoaded, socket?.id])
+  ) => tankGunAnimation(ctx,tankState,tankGunAnimationState,keysPressed,frames, socket?.id, fireSoundRef),[isGunImageLoaded, socket?.id, fireSoundRef])
 
   // Animation cho đạn
   const tankBulletAnimationCB = useCallback((
@@ -204,7 +219,7 @@ function Game() {
     ctx: CanvasRenderingContext2D,
     tankState: RefObject<TankState>,
     itemImages: RefObject<HTMLImageElement[]>,
-  ) => tankHealthAnimation(ctx,tankState, itemImages, socket?.id),[isItemImageLoaded])
+  ) => tankHealthAnimation(ctx,tankState, itemImages, socket?.id, itemSoundRef),[isItemImageLoaded])
 
 
   // --- 3. LOAD ASSETS ---
@@ -224,6 +239,51 @@ function Game() {
         img.onload = () => { assets[key] = img; cnt++; if (cnt === total) { mapAssetsRef.current = assets; setIsMapLoaded(true); } };
     });
   }, []);
+
+  // sound state
+  const soundStateRef = useRef<SoundState>({});
+
+  function gameSound() {
+    const myTank = socket?.id ? tankStateRef.current.tankStates[socket.id] : null;
+    if(!myTank) return;
+
+    // Tìm các tank có trong màn hình
+    for (const pid in tankStateRef.current.tankStates) {
+      // if(pid === socket?.id) continue; // bỏ qua tank của mình
+      const p = tankStateRef.current.tankStates[pid];
+      const distX = p.x - myTank.x;
+      const distY = p.y - myTank.y;
+      const distSq = distX * distX + distY * distY;
+      const hearingRadius = 400;
+      if(soundStateRef.current[pid] === undefined) {
+        soundStateRef.current[pid] = {
+          fireSound: false,
+          itemSound: false,
+        };
+      }
+      const soundState = soundStateRef.current[pid];
+      if (distSq <= hearingRadius * hearingRadius) {
+        if(soundState.itemSound == false && p.itemKind !== "none") {
+          console.log("Play item sound for player ", pid);
+          itemSoundRef?.current?.play();
+          soundState.itemSound = true;
+        }
+      }
+      // reset 
+      if(p.itemKind === "none") {
+        soundState.itemSound = false;
+      }
+    }
+
+    // Chạy nhạc nền
+    if(backgroundMusicRef && backgroundMusicRef.current) {
+      backgroundMusicRef.current.volume = 0.2;
+      backgroundMusicRef.current.loop = true;
+      if(backgroundMusicRef.current.paused) {
+        backgroundMusicRef.current.play();
+      }
+    }
+}
 
 
   // --- 5. GAME LOOP (ANIMATE) ---
@@ -256,18 +316,15 @@ function Game() {
         // 1. Tính vị trí muốn camera đến (Tank ở giữa)
         camX = myTank.x - viewport.current.w / 2;
         camY = myTank.y - viewport.current.h / 2; 
+        console.log("Cam target:", camX, camY);
 
-        // 2. Giới hạn Camera (không vượt quá biên trái/trên và phải/dưới)
-        // Thêm TILE_SIZE padding để đảm bảo hiển thị trọn cả khi screen không phải bội số 40
-        camX = Math.max(0, camX);
-        camY = Math.max(0, camY);
+        // 2. Giới hạn Camera không đi ra ngoài biên map
+        camX = Math.max(0, Math.min(camX, MAP_REAL_W - viewport.current.w));
+        camY = Math.max(0, Math.min(camY, MAP_REAL_H - viewport.current.h));
+
+        console.log("Cam clamped:", camX, camY);
         
-        if (MAP_REAL_W > viewport.current.w) {
-            camX = Math.min(camX, MAP_REAL_W - viewport.current.w + 7.2 * TILE_SIZE);
-        }
-        if (MAP_REAL_H > viewport.current.h) {
-            camY = Math.min(camY, MAP_REAL_H - viewport.current.h + 4.1 * TILE_SIZE);
-        }
+       
     }    // --- VẼ THẾ GIỚI TRONG KHU VỰC VIEWPORT 100% ---
     ctx.save();
     ctx.translate(-camX, -camY); // Dịch chuyển thế giới
@@ -279,7 +336,8 @@ function Game() {
     tankMovingAnimationCB(ctx, tankStateRef, tankAnimationState, keysPressed, tankBodyImageRef);
     tankGunAnimationCB(ctx, tankStateRef, tankGunAnimationState, keysPressed, tankGunImageRef);
     tankBulletAnimationCB(ctx, bulletStateRef, bulletAnimationState, bulletImageRef);
-    tankHealthAnimationCB(ctx, tankStateRef, itemRef );
+    tankHealthAnimationCB(ctx, tankStateRef, itemRef);
+    gameSound()
 
     ctx.restore();
 

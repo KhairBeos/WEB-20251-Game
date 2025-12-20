@@ -20,8 +20,10 @@ export class TankStateManager {
         speed: number;
         damage: number;
         ownerId: string;
+        
       },
     ) => void,
+    server: any,
   ) {
     // Xoa tanks hết máu
     for (const pid in tankState.tankStates) {
@@ -82,6 +84,7 @@ export class TankStateManager {
           if (timeSinceLastShot >= SHOOT_COOLDOWN) {
             tank.lastShootTimestamp = now;
             console.log(`Tank ${pid} fired a bullet.`);
+            server.emit('fireBullet', pid);
             handleBulletFire(pid, {
               clientTimestamp: now,
               startX: tank.x + (tank.width / 2) * Math.sin(angleInRadians),
@@ -89,7 +92,7 @@ export class TankStateManager {
               width: 32,
               height: 36,
               degree: tank.degree,
-              speed: tank.speed * 3,
+              speed: tank.speed * 2,
               damage: newDamage,
               ownerId: pid,
             });

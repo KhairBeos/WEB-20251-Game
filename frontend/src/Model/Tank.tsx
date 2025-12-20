@@ -39,9 +39,16 @@ export interface TankState {
 
 export interface TankAnimationState {
   [playerId: string]: {
-    frameIndex: number,
-    frameCounter: number,
-    isMoving: boolean,
+    moving: {
+      frameIndex: number,
+      frameCounter: number,
+      isMoving: boolean,
+    },
+    onHit: {
+      frameIndex: number,
+      frameCounter: number,
+      isOnHit: boolean,
+    }
     
     
    

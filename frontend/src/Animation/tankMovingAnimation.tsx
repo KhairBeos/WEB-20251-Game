@@ -9,7 +9,8 @@ export const tankMovingAnimation = (
   tankAnimationState: RefObject<TankAnimationState>,
   keysPressed: RefObject<KeyMap>,
   frames: RefObject<HTMLImageElement[]>,
-  viewerId?: string
+  viewerId?: string,
+  hitSoundRef?: RefObject<HTMLAudioElement>,
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
@@ -27,31 +28,38 @@ export const tankMovingAnimation = (
       // Khởi tạo trạng thái hoạt ảnh nếu chưa có
       if (tankAnimationState.current[playerId] === undefined) {
         tankAnimationState.current[playerId] = {
-          frameIndex: 0,
-          frameCounter: 0,
-          isMoving: false,
+          moving: {
+            frameIndex: 0,
+            frameCounter: 0,
+            isMoving: false,
+          },
+          onHit: {
+            frameIndex: 0,
+            frameCounter: 0,
+            isOnHit: false,
+          }
         };
       }
 
       // Cập nhật trạng thái di chuyển dựa trên phím nhấn
       if (keysPressed.current["w"] || keysPressed.current["s"])
-        tankAnimationState.current[playerId].isMoving = true;
+        tankAnimationState.current[playerId].moving.isMoving = true;
       else 
-        tankAnimationState.current[playerId].isMoving = false;
+        tankAnimationState.current[playerId].moving.isMoving = false;
 
 
       const animState = tankAnimationState.current[playerId];
       // Nếu nhân vật đang di chuyển, cập nhật hoạt ảnh
-      if (animState.isMoving) {
-        animState.frameCounter++;
-        if (animState.frameCounter >= ANIMATION_SPEED) {
-          animState.frameCounter = 0;
+      if (animState.moving.isMoving) {
+        animState.moving.frameCounter++;
+        if (animState.moving.frameCounter >= ANIMATION_SPEED) {
+          animState.moving.frameCounter = 0;
           // Chuyển sang khung hình tiếp theo, nếu là khung cuối thì quay lại khung đầu (0)
-          animState.frameIndex = (animState.frameIndex + 1) % 2;
+          animState.moving.frameIndex = (animState.moving.frameIndex + 1) % 2;
         }
       } else {
-        animState.frameCounter = 0;
-        animState.frameIndex = 0;
+        animState.moving.frameCounter = 0;
+        animState.moving.frameIndex = 0;
       }
       // console.log(p.isMoving,animState.frameIndex, animState.frameCounter);
 
@@ -69,7 +77,7 @@ export const tankMovingAnimation = (
       ctx.rotate(angleInRadians);
 
       // Lấy đối tượng Image tương ứng với khung hình hiện tại
-      const img = frames.current[animState.frameIndex];
+      const img = frames.current[animState.moving.frameIndex];
       if (!img) {
         ctx.restore();
         return;
@@ -82,6 +90,34 @@ export const tankMovingAnimation = (
       // Kích thước vẽ trên Canvas
       const destWidth = p.width;
       const destHeight = p.height;
+
+
+      // Nếu tank đang bị trúng đạn, làm hiệu ứng nhấp nháy
+      if (animState.onHit.isOnHit) {
+        // Phát âm thanh trúng đạn
+        if(hitSoundRef && hitSoundRef.current && animState.onHit.frameCounter === 0 && animState.onHit.frameIndex === 0) {
+          hitSoundRef.current.play();
+        }
+        animState.onHit.frameCounter++;
+        if (animState.onHit.frameCounter >= ANIMATION_SPEED) {
+          animState.onHit.frameCounter = 0;
+          animState.onHit.frameIndex++;
+          // Kết thúc hiệu ứng khi vẽ hết tất cả khung hình
+          if (animState.onHit.frameIndex >= 1) {
+            animState.onHit.isOnHit = false;
+            animState.onHit.frameIndex = 0;
+            animState.onHit.frameCounter = 0;
+          }
+        }
+        // Bôi đỏ tank khi trúng đạn
+        ctx.fillStyle = "rgba(255, 0, 0, 0.5)";
+        ctx.fillRect(destX, destY, destWidth, destHeight);
+        
+        // Vẽ tank
+        // ctx.drawImage(img, destX, destY, destWidth, destHeight);
+        ctx.restore();
+        continue;
+      }
 
       // Nếu tank của mình và đang ở trong bụi, vẽ mờ đi
       if (playerId === viewerId && p.inBush != "none") {
@@ -101,6 +137,8 @@ export const tankMovingAnimation = (
         }
       }
       ctx.drawImage(img, destX, destY, destWidth, destHeight);
+
+
       
       // Debug: Hiển thị bounding box tank và bán kính va chạm
       if (DEBUG_MODE) {

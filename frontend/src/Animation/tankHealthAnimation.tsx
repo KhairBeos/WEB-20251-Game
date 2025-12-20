@@ -10,6 +10,8 @@ export const tankHealthAnimation = (
   tankState: RefObject<TankState>,
   featureImages: RefObject<HTMLImageElement[]> ,
   viewerId?: string,
+  itemSoundRef?: RefObject<HTMLAudioElement>,
+
 ) => {
   const healthItemImg = featureImages.current ? featureImages.current[0] : null;
   const shieldItemImg = featureImages.current ? featureImages.current[1] : null;
@@ -86,24 +88,12 @@ export const tankHealthAnimation = (
         ctx.textAlign = "left";
         ctx.fillText(`${p.health}/${p.maxHealth}`, healthBarX + healthBarWidth + 10, healthBarY + healthBarHeight);
         
-        // Vẽ shield bar nếu có shield
-        if(p.itemKind === 'shield') {
-          const shieldBarWidth = 50;
-          const shieldBarHeight = 4;
-          const shieldBarX = -shieldBarWidth / 2;
-          const shieldBarY = healthBarY + healthBarHeight - 2;
-          // Vẽ thanh shield (màu trắng)
-          ctx.fillStyle = "white";
-          ctx.fillRect(shieldBarX, shieldBarY, shieldBarWidth *(p.shield / 50), shieldBarHeight);
-        }
-
         // Vẽ icon item ở trên phía trên tank
         const itemIconSize = 20;
         const itemIconX = -itemIconSize / 2;
         const itemIconY = -p.height / 2 - itemIconSize - 15;
         // ctx.drawImage(shieldItemImg, itemIconX, itemIconY, itemIconSize, itemIconSize);
-        console.log("p.itemKind:", p.itemKind);
-
+        
         if(p.itemKind === 'health') {
           ctx.drawImage(healthItemImg, itemIconX, itemIconY, itemIconSize, itemIconSize);
         }
@@ -116,7 +106,18 @@ export const tankHealthAnimation = (
         else if(p.itemKind === 'damage') {
           ctx.drawImage(damageItemImg, itemIconX, itemIconY, itemIconSize, itemIconSize);
         }
-          
+        
+        // Vẽ shield bar nếu có shield
+        if(p.itemKind === 'shield') {
+          const shieldBarWidth = 50;
+          const shieldBarHeight = 4;
+          const shieldBarX = -shieldBarWidth / 2;
+          const shieldBarY = healthBarY + healthBarHeight - 2;
+          // Vẽ thanh shield (màu trắng)
+          ctx.fillStyle = "white";
+          ctx.fillRect(shieldBarX, shieldBarY, shieldBarWidth *(p.shield / 50), shieldBarHeight);
+        }
+
         // Vẽ ring thời gian còn lại của item
         if(p.itemKind !== 'none') {
           const nowTs = Date.now();
