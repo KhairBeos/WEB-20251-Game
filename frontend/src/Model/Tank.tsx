@@ -11,6 +11,7 @@ export type Tank = {
     height: number,
     radius: number,
     maxHealth: number,
+    skin?: string,
 }
 
 export type TankInput = {
