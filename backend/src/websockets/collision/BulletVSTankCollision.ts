@@ -34,6 +34,13 @@ export function bulletVSTankCollision(
         }
         if (dmg > 0) {
           t.health -= dmg;
+          if (t.health <= 0) {
+             const shooter = tankStates[bullet.ownerId];
+             
+             if (shooter) {
+                 shooter.score += 10;
+             }
+          }
         }
         delete bulletState[bid];
         break; // Viên đạn đã va chạm, không cần kiểm tra với các tank khác

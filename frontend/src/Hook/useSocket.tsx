@@ -3,7 +3,9 @@ import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { SOCKET_URL } from '../GlobalSetting';
 
-
+const generateSessionId = () => {
+  return 'sess_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+};
 
 export const useSocket = () => {
   // useRef được sử dụng để giữ instance socket giữa các lần render
@@ -16,12 +18,22 @@ export const useSocket = () => {
 
     // Chỉ tạo kết nối nếu code đang chạy trên trình duyệt (window là undefined trong SSR)
     if (typeof window !== 'undefined') {
+
+      let sessionId = localStorage.getItem('tank_session_id');
+      
+      if (!sessionId) {
+
+        sessionId = generateSessionId();
+        localStorage.setItem('tank_session_id', sessionId);
+      }
+
       const socket = io(SOCKET_URL, {
-        // Thêm các options như transports, authentication token nếu cần
-        // autoConnect: false, // Ngăn kết nối ngay lập tức
-        query: {
-          name : "ano", // Ví dụ thêm tên người chơi ngẫu nhiên
-        }
+        // Gửi SessionID lên server
+        auth: {
+          sessionId: sessionId, 
+        },
+        reconnection: true, // Tự động kết nối lại khi rớt mạng
+        // query: { name: "ano" }
       });
 
       socketRef.current = socket;

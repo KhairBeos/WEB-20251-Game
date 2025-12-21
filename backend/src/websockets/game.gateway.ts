@@ -12,14 +12,16 @@ import { Socket, Server } from 'socket.io';
 import * as gameService from './game.service';
 import { Logger, OnModuleInit } from '@nestjs/common';
 import type { TankInput } from './model/Tank';
+import type { BulletInput } from './model/Bullet';
 
 @WebSocketGateway({
   cors: { origin: '*' },
-  // Bạn có thể chỉ định namespace nếu cần, ví dụ: namespace: 'game'
 })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
   @WebSocketServer()
   server: Server;
+
+  private readonly logger = new Logger(GameGateway.name);
 
   constructor(private readonly gameService: gameService.GameService) {}
 
@@ -30,33 +32,70 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
 
   // Xử lý khi Client kết nối
   handleConnection(@ConnectedSocket() client: Socket) {
-    // Thêm người chơi vào Game Service
-    this.gameService.addPlayer(client.id);
-    // Thêm client vào một phòng chung (nếu đây là game 1 phòng)
-    // client.join('main_room');
+    const sessionId = client.handshake.auth.sessionId; // Lấy "Thẻ căn cước"
+    this.logger.log(`Client connected: ${client.id} (Session: ${sessionId})`);
+
+    if (sessionId) {
+        const restoredTank = this.gameService.restoreSession(sessionId, client.id);
+        
+        if (restoredTank) {
+            this.logger.log(`-> Welcome back ${restoredTank.name}!`);
+
+            client.emit('sessionRestored', { 
+                name: restoredTank.name,
+                tank: restoredTank
+            });
+
+            client.emit('mapData', { map: this.gameService.getMap() });
+            
+            return;
+        }
+    }
+
+    this.logger.log(`-> New visitor waiting to register...`);
+  }
+
+  @SubscribeMessage('registerName')
+  handleRegisterName(
+    @ConnectedSocket() client: Socket, 
+    @MessageBody() payload: { name: string }
+  ) {
+    const sessionId = client.handshake.auth.sessionId;
+
+    if (!this.gameService.getTank(client.id)) {
+        console.log(`Registering new player: ${payload.name}`);
+        this.gameService.addPlayer(client.id, payload.name, sessionId);
+    }
   }
 
   // Xử lý khi Client ngắt kết nối
   handleDisconnect(@ConnectedSocket() client: Socket) {
-    // Xóa người chơi khỏi Game Service
+    // Chỉ xóa khỏi map tạm thời, Session vẫn giữ trong Service
     this.gameService.removePlayer(client.id);
   }
 
   // Lắng nghe input di chuyển từ Client
   // Dữ liệu client gửi lên: socket.emit('playerInput', { direction: 'right' });
-  @SubscribeMessage('tankInput')
+ @SubscribeMessage('tankInput')
   handleMove(
     @MessageBody() tankInput: TankInput,
     @ConnectedSocket() client: Socket,
   ): void {
-    // Chuyển input đến Game Service để xử lý trong vòng lặp game
-    //console.log(`Received input from ${client.id}:`, tankInput);
-    //console.log("received input")
-    this.gameService.handleTankInput(client.id, tankInput);
+    // Chỉ xử lý nếu xe tăng thực sự tồn tại
+    if (this.gameService.getTank(client.id)) {
+        this.gameService.handleTankInput(client.id, tankInput);
+    }
   }
 
-  // @SubscribeMessage('bulletInput')
-  // handleBulletFire(@MessageBody() bulletInput: any, @ConnectedSocket() client: Socket): void {
-  //   this.gameService.handleBulletFire(client.id, bulletInput);
-  // }
+  @SubscribeMessage('bulletInput')
+  handleBulletFire(
+    @MessageBody() bulletInput: BulletInput, 
+    @ConnectedSocket() client: Socket
+  ): void {
+     // Chỉ cho bắn nếu xe tồn tại và còn sống
+     const tank = this.gameService.getTank(client.id);
+     if (tank && tank.health > 0) {
+        this.gameService.handleBulletFire(client.id, bulletInput);
+     }
+  }
 }

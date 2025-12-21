@@ -1,16 +1,20 @@
-'use client';
+"use client";
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+import Game from '../../View/Game';
 
-import dynamic from 'next/dynamic'; 
+function GameContent() {
+    const searchParams = useSearchParams();
+    
+    const playerName = searchParams.get('username') || "Anonymous"; 
 
-const Game = dynamic(() => import("../../View/Game"), { 
-  ssr: false,
-  loading: () => <div className="text-white">Loading Game Resources...</div>
-});
+    return <Game playerName={playerName} />;
+}
 
-export default function Home() {
-  return (
-    <main className="flex h-screen w-screen items-center justify-center bg-gray-900 overflow-hidden">
-      <Game /> 
-    </main>
-  );
+export default function GamePage() {
+    return (
+        <Suspense fallback={<div className="text-white text-center mt-10">Đang tải chiến trường...</div>}>
+            <GameContent />
+        </Suspense>
+    );
 }
