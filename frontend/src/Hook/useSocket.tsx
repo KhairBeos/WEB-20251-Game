@@ -19,18 +19,18 @@ export const useSocket = () => {
     // Chỉ tạo kết nối nếu code đang chạy trên trình duyệt (window là undefined trong SSR)
     if (typeof window !== 'undefined') {
 
+      // Lấy sessionId từ localStorage 
       let sessionId = localStorage.getItem('tank_session_id');
-      
+      // Nếu chưa có yêu cầu quay lại đăng nhập để tạo mới
       if (!sessionId) {
-
-        sessionId = generateSessionId();
-        localStorage.setItem('tank_session_id', sessionId);
+        alert('Session expired or not found. Please log in again.');
+        window.location.href = '/';
+        return;
       }
-
       const socket = io(SOCKET_URL, {
         // Gửi SessionID lên server
         auth: {
-          sessionId: sessionId, 
+          sessionId: sessionId,
         },
         reconnection: true, // Tự động kết nối lại khi rớt mạng
         // query: { name: "ano" }
@@ -47,6 +47,8 @@ export const useSocket = () => {
 
       socket.on('disconnect', () => {
         console.log('Socket client disconnected.');
+        alert('Session expired or not found. Please log in again.');
+        window.location.href = '/';
         setIsConnected(false);
       });
 

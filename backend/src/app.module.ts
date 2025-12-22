@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { CatsController } from './cat.controller';
 import { GameModule } from './websockets/game.module';
 import { ConfigModule } from '@nestjs/config';
+import { AuthController } from './auth/auth.controller';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -9,6 +11,7 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true,
     }),
     GameModule,
+    AuthModule
   ],
   controllers: [CatsController],
   providers: [],

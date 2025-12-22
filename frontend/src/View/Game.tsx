@@ -35,7 +35,6 @@ interface GameProps {
 
 function Game({ playerName }: GameProps) {
   const router = useRouter();
-  console.log("Game nhận được tên:", playerName);
 
   // --- STATE GAME ---
   const [isGameOver, setIsGameOver] = useState(false);
@@ -114,7 +113,6 @@ function Game({ playerName }: GameProps) {
       return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  console.log(tankStateRef.current);
   // Chặn Ctrl+wheel (zoom) và pinch gesture
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {

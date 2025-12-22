@@ -3,21 +3,21 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Server } from 'socket.io';
 
 // Import MapData nội bộ (Copy file MapData vào backend/src/Model/MapData.ts trước nhé)
-import { generateMap, MapCell, MapData, SPAWNPOINTS, TILE_SIZE } from 'src/websockets/model/MapData';
+import { generateMap, MapData } from 'src/websockets/model/MapData';
 import { bulletVSTankCollision } from './collision/BulletVSTankCollision';
+import { bulletWallCollision } from './collision/BulletWallCollision';
 import { tankCollision } from './collision/TankCollision';
 import { tankWallCollision } from './collision/TankWallCollision';
-import { BulletInput, BulletInputBuffer, BulletState, Bullet } from './model/Bullet';
+import { Bullet, BulletInputBuffer, BulletState } from './model/Bullet';
 import { createInitialTank, TankInput, TankInputBuffer, TankState } from './model/Tank';
-import { GridSpatial } from './utils/GridSpartial';
-import { bulletWallCollision } from './collision/BulletWallCollision';
+import { BushService } from './service/BushService';
 import { MapService } from './service/MapService';
-import { BulletStateManager } from './state/BulletStateManager';
-import { TankStateManager } from './state/TankStateManager';
 import { PickupService } from './service/PickupService';
 import { TowerService } from './service/TowerService';
-import { BushService } from './service/BushService';
-import { create } from 'domain';
+import { BulletStateManager } from './state/BulletStateManager';
+import { TankStateManager } from './state/TankStateManager';
+import { GridSpatial } from './utils/GridSpartial';
+import { sessionStore } from 'src/auth/session.store';
 
 @Injectable()
 export class GameService implements OnModuleInit {
@@ -25,7 +25,7 @@ export class GameService implements OnModuleInit {
 
   private readonly logger = new Logger(GameService.name);
 
-  private sessions = new Map<string, any>();
+  private tankSessions = new Map<string, string>();
 
   public tankState: TankState = {
     serverTimestamp: 0,
@@ -107,9 +107,7 @@ export class GameService implements OnModuleInit {
       }
     }, 10000); // 10s
 
-    setInterval(() => {
-        this.cleanupStaleSessions();
-    }, 60 * 1000);
+   
   }
 
   addPlayer(id: string, name: string, sessionId: string) {
@@ -117,14 +115,9 @@ export class GameService implements OnModuleInit {
     this.tankInputBuffer[id] = [];
     this.bulletInputBuffer[id] = [];
 
-    const newTank = createInitialTank(id, `Player_${id.substring(0, 4)}`);
+    const newTank = createInitialTank(id, name);
     this.tankState.tankStates[id] = newTank;
-
-    this.tankState.tankStates[id] = newTank;
-
-    if (sessionId) {
-        this.sessions.set(sessionId, newTank);
-    }
+    this.tankSessions.set(id, sessionId);
 
     console.log(`Player ${id} joined with Session ${sessionId}`);
 
@@ -135,48 +128,6 @@ export class GameService implements OnModuleInit {
       }, 100);
     }
   }
-
-  restoreSession(sessionId: string, newSocketId: string) {
-    const oldTank = this.sessions.get(sessionId);
-    
-    // Chỉ khôi phục nếu tìm thấy xác xe và xe chưa chết
-    if (oldTank && oldTank.health > 0) {
-        this.disconnectTimestamps.delete(sessionId);
-        // Xóa xác xe ở socket cũ
-        const oldSocketId = oldTank.id;
-        delete this.tankState.tankStates[oldSocketId];
-
-        // Cập nhật socket mới cho xe cũ
-        oldTank.id = newSocketId;
-        
-        // Init lại buffer cho socket mới
-        this.tankInputBuffer[newSocketId] = [];
-        this.bulletInputBuffer[newSocketId] = [];
-
-        // Đưa xe trở lại bản đồ
-        this.tankState.tankStates[newSocketId] = oldTank;
-        
-        // Cập nhật lại kho session với object mới
-        this.sessions.set(sessionId, oldTank);
-        
-        console.log(`Session Restored: ${oldTank.name} (Socket: ${oldSocketId} -> ${newSocketId})`);
-        return oldTank;
-    }
-    return null;
-  }
-
-  killTank(socketId: string) {
-      const tank = this.tankState.tankStates[socketId];
-      if (tank) {
-            for (const [sId, t] of this.sessions.entries()) {
-                if (t === tank) {
-                    this.sessions.delete(sId);
-                    break;
-                }
-            }
-      }
-  }
-
   removePlayer(id: string) {
     console.log(`Player ${id} disconnected (Connection lost).`);
 
@@ -186,26 +137,8 @@ export class GameService implements OnModuleInit {
     delete this.bulletInputBuffer[id];
     delete this.tankInputBuffer[id];
 
-    for (const [sessId, tank] of this.sessions.entries()) {
-          if (tank.id === id) {
-              this.disconnectTimestamps.set(sessId, Date.now());
-              break;
-          }
-      }
-  }
-
-  private cleanupStaleSessions() {
-      const NOW = Date.now();
-      const TIMEOUT = 5 * 60 * 1000; 
-
-      for (const [sessId, time] of this.disconnectTimestamps.entries()) {
-          // Nếu đã thoát quá 5 phút
-          if (NOW - time > TIMEOUT) {
-              console.log(`Dọn dẹp session rác: ${sessId}`);
-              this.sessions.delete(sessId);           // Xóa session
-              this.disconnectTimestamps.delete(sessId); // Xóa timestamp
-          }
-      }
+    sessionStore.delete(this.tankSessions.get(id) || '');
+    this.tankSessions.delete(id);
   }
 
   handleTankInput(id: string, input: TankInput) {
