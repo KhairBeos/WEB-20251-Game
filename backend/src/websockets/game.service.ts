@@ -25,7 +25,9 @@ export class GameService implements OnModuleInit {
 
   private readonly logger = new Logger(GameService.name);
 
-  private tankState: TankState = {
+  private sessions = new Map<string, any>();
+
+  public tankState: TankState = {
     serverTimestamp: 0,
     tankStates: {},
   };
@@ -54,9 +56,18 @@ export class GameService implements OnModuleInit {
   private server: Server;
   private readonly GAME_TICK_RATE = 1000 / 60;
   private itemNumber = 0;
+  private disconnectTimestamps = new Map<string, number>();
 
   setServer(server: Server) {
     this.server = server;
+  }
+
+  getMap() {
+      return this.currentMap;
+  }
+
+  getTank(id: string) {
+      return this.tankState.tankStates[id];
   }
 
   onModuleInit() {
@@ -95,9 +106,13 @@ export class GameService implements OnModuleInit {
         // swallow errors to keep timer alive
       }
     }, 10000); // 10s
+
+    setInterval(() => {
+        this.cleanupStaleSessions();
+    }, 60 * 1000);
   }
 
-  addPlayer(id: string) {
+  addPlayer(id: string, name: string, sessionId: string) {
     // Khởi tạo trạng thái input
     this.tankInputBuffer[id] = [];
     this.bulletInputBuffer[id] = [];
@@ -105,8 +120,13 @@ export class GameService implements OnModuleInit {
     const newTank = createInitialTank(id, `Player_${id.substring(0, 4)}`);
     this.tankState.tankStates[id] = newTank;
 
-    console.log(`Player ${id} joined.`);
-    console.log(`Initial Tank State:`, this.tankState.tankStates[id]);
+    this.tankState.tankStates[id] = newTank;
+
+    if (sessionId) {
+        this.sessions.set(sessionId, newTank);
+    }
+
+    console.log(`Player ${id} joined with Session ${sessionId}`);
 
     // Gửi Map ngay cho người mới
     if (this.server) {
@@ -116,12 +136,76 @@ export class GameService implements OnModuleInit {
     }
   }
 
+  restoreSession(sessionId: string, newSocketId: string) {
+    const oldTank = this.sessions.get(sessionId);
+    
+    // Chỉ khôi phục nếu tìm thấy xác xe và xe chưa chết
+    if (oldTank && oldTank.health > 0) {
+        this.disconnectTimestamps.delete(sessionId);
+        // Xóa xác xe ở socket cũ
+        const oldSocketId = oldTank.id;
+        delete this.tankState.tankStates[oldSocketId];
+
+        // Cập nhật socket mới cho xe cũ
+        oldTank.id = newSocketId;
+        
+        // Init lại buffer cho socket mới
+        this.tankInputBuffer[newSocketId] = [];
+        this.bulletInputBuffer[newSocketId] = [];
+
+        // Đưa xe trở lại bản đồ
+        this.tankState.tankStates[newSocketId] = oldTank;
+        
+        // Cập nhật lại kho session với object mới
+        this.sessions.set(sessionId, oldTank);
+        
+        console.log(`Session Restored: ${oldTank.name} (Socket: ${oldSocketId} -> ${newSocketId})`);
+        return oldTank;
+    }
+    return null;
+  }
+
+  killTank(socketId: string) {
+      const tank = this.tankState.tankStates[socketId];
+      if (tank) {
+            for (const [sId, t] of this.sessions.entries()) {
+                if (t === tank) {
+                    this.sessions.delete(sId);
+                    break;
+                }
+            }
+      }
+  }
+
   removePlayer(id: string) {
-    // Xóa trạng thái và buffer của người chơi
-    console.log(`Player ${id} left.`);
+    console.log(`Player ${id} disconnected (Connection lost).`);
+
+    delete this.tankState.tankStates[id];
+    
+    // Xóa buffer
     delete this.bulletInputBuffer[id];
     delete this.tankInputBuffer[id];
-    delete this.tankState.tankStates[id];
+
+    for (const [sessId, tank] of this.sessions.entries()) {
+          if (tank.id === id) {
+              this.disconnectTimestamps.set(sessId, Date.now());
+              break;
+          }
+      }
+  }
+
+  private cleanupStaleSessions() {
+      const NOW = Date.now();
+      const TIMEOUT = 5 * 60 * 1000; 
+
+      for (const [sessId, time] of this.disconnectTimestamps.entries()) {
+          // Nếu đã thoát quá 5 phút
+          if (NOW - time > TIMEOUT) {
+              console.log(`Dọn dẹp session rác: ${sessId}`);
+              this.sessions.delete(sessId);           // Xóa session
+              this.disconnectTimestamps.delete(sessId); // Xóa timestamp
+          }
+      }
   }
 
   handleTankInput(id: string, input: TankInput) {

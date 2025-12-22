@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+type StyleMap = { [key: string]: any };
+
 const SKINS = [
-  { id: "red", name: "Đỏ", img: "/skins/red.png" },
-  { id: "mint", name: "Đỏ", img: "/skins/mint.png" },
+  { id: "red", name: "Đỏ", img: "/skins/red.png" }, 
+  { id: "mint", name: "Bạc Hà", img: "/skins/mint.png" },
   { id: "ocean", name: "Đại Dương", img: "/skins/ocean.png" },
   { id: "lemon", name: "Chanh Tươi", img: "/skins/lemon.png" },
   { id: "dark", name: "Bóng Đêm", img: "/skins/dark.png" },
@@ -13,22 +15,26 @@ const SKINS = [
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
-  const [activeMenu, setActiveMenu] = useState<"settings" | "keyboard" | null>(
-    null
-  );
+  const [activeMenu, setActiveMenu] = useState<"settings" | "keyboard" | null>(null);
   const [volume, setVolume] = useState(50);
   const [skinIndex, setSkinIndex] = useState(0);
-  const router = useRouter(); 
+  const router = useRouter();
 
   const handlePlay = () => {
     if (!username.trim()) {
-      alert("🌱 Đừng quên nhập tên nhé!");
+      alert("🌱 Đừng quên nhập tên nhé chiến binh!");
       return;
     }
     const selectedSkin = SKINS[skinIndex].id;
     router.push(
       `/game?username=${encodeURIComponent(username)}&skin=${selectedSkin}`
     );
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handlePlay();
+    }
   };
 
   const nextSkin = () => {
@@ -40,72 +46,32 @@ export default function LoginPage() {
   };
 
   const currentSkin = SKINS[skinIndex];
-return (
+
+  return (
     <>
       <style jsx global>{`
         @import url("https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap");
-        * {
-          box-sizing: border-box;
-        }
-        body {
-          margin: 0;
-          overflow: hidden;
-        }
+        * { box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; }
 
         @keyframes float-bg {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
         }
         @keyframes popIn {
-          0% {
-            transform: scale(0.9);
-            opacity: 0;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
+          0% { transform: scale(0.9); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
         }
         @keyframes tank-bounce {
-          0%,
-          100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-5px);
-          }
-      }
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
       `}</style>
 
       <div style={styles.container}>
-        <div
-          style={{
-            ...styles.circle,
-            top: "-10%",
-            left: "-10%",
-            width: "500px",
-            height: "500px",
-            background: "rgba(255,255,255,0.2)",
-          }}
-        ></div>
-        <div
-          style={{
-            ...styles.circle,
-            bottom: "-10%",
-            right: "-5%",
-            width: "400px",
-            height: "400px",
-            background: "#ff9a9e",
-            opacity: 0.2,
-          }}
-        ></div>
+        <div style={{...styles.circle, top: "-10%", left: "-10%", width: "500px", height: "500px", background: "rgba(255,255,255,0.2)"}}></div>
+        <div style={{...styles.circle, bottom: "-10%", right: "-5%", width: "400px", height: "400px", background: "#ff9a9e", opacity: 0.2}}></div>
 
         <div style={styles.card}>
           <div style={styles.logoBadge}>IO</div>
@@ -113,29 +79,21 @@ return (
             Tank<span style={{ color: "#4facfe" }}>Battle</span>
           </h1>
 
-          <div
-            style={{
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem",
-            }}
-          >
+          <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "1rem" }}>
             <input
               type="text"
               placeholder="Nhập tên chiến binh..."
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={handleKeyDown} 
               style={styles.input}
+              autoFocus 
             />
 
             <div style={styles.skinSelector}>
-              <button onClick={prevSkin} style={styles.arrowBtn}>
-                ❮
-              </button>
+              <button onClick={prevSkin} style={styles.arrowBtn}>❮</button>
 
               <div style={styles.skinPreview}>
-                {/* --- CHỈNH SỬA 2: Thay thế CSS Tank bằng thẻ IMG --- */}
                 <div style={styles.tankContainer}>
                   <img
                     src={currentSkin.img}
@@ -148,25 +106,19 @@ return (
                     }}
                   />
                 </div>
-
                 <span style={styles.skinName}>{currentSkin.name}</span>
               </div>
 
-              <button onClick={nextSkin} style={styles.arrowBtn}>
-                ❯
-              </button>
+              <button onClick={nextSkin} style={styles.arrowBtn}>❯</button>
             </div>
 
             <button
               onClick={handlePlay}
               style={styles.playButton}
-              onMouseOver={(e) =>
-                (e.currentTarget.style.transform = "translateY(-3px)")
-              }
-              onMouseOut={(e) =>
-                (e.currentTarget.style.transform = "translateY(0)")
-              }>
-                VÀO GAME NGAY 🚀
+              onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-3px)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0)")}
+            >
+              VÀO GAME NGAY 🚀
             </button>
           </div>
         </div>
@@ -174,19 +126,15 @@ return (
         <div style={styles.menuContainer}>
           <div style={{ position: "relative" }}>
             <button
-              onClick={() =>
-                setActiveMenu(activeMenu === "settings" ? null : "settings")
-              }
+              onClick={() => setActiveMenu(activeMenu === "settings" ? null : "settings")}
               style={styles.iconButton(activeMenu === "settings")}
             >
               ⚙️ Cài đặt
             </button>
-      {activeMenu === "settings" && (
+            {activeMenu === "settings" && (
               <div style={styles.popup}>
                 <h4 style={styles.popupTitle}>Âm lượng</h4>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "10px" }}
-                >
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                   <span>🔊</span>
                   <input
                     type="range"
@@ -203,9 +151,7 @@ return (
 
           <div style={{ position: "relative" }}>
             <button
-              onClick={() =>
-                setActiveMenu(activeMenu === "keyboard" ? null : "keyboard")
-              }
+              onClick={() => setActiveMenu(activeMenu === "keyboard" ? null : "keyboard")}
               style={styles.iconButton(activeMenu === "keyboard")}
             >
               ⌨️ Điều khiển
@@ -214,23 +160,10 @@ return (
               <div style={styles.popup}>
                 <h4 style={styles.popupTitle}>Bàn phím</h4>
                 <div style={styles.keyGrid}>
-                  <div
-                    style={{
-                      gridColumn: "2",
-                      display: "flex",
-                      justifyContent: "center",
-                    }}
-                  >
+                  <div style={{ gridColumn: "2", display: "flex", justifyContent: "center" }}>
                     <KeyCap label="W" />
                   </div>
-                  <div
-                    style={{
-                      gridColumn: "1/4",
-                      display: "flex",
-                      gap: "0.5rem",
-                      justifyContent: "center",
-                    }}
-                  >
+                  <div style={{ gridColumn: "1/4", display: "flex", gap: "0.5rem", justifyContent: "center" }}>
                     <KeyCap label="A" />
                     <KeyCap label="S" />
                     <KeyCap label="D" />
@@ -249,7 +182,7 @@ const KeyCap = ({ label }: { label: string }) => (
   <div style={styles.keyCap}>{label}</div>
 );
 
-const styles: any = {
+const styles: StyleMap = {
   container: {
     display: "flex",
     justifyContent: "center",
@@ -273,8 +206,7 @@ const styles: any = {
     background: "rgba(255, 255, 255, 0.9)",
     padding: "3rem 2.5rem",
     borderRadius: "32px",
-    boxShadow:
-      "0 20px 60px rgba(0, 50, 100, 0.15), inset 0 -5px 10px rgba(0,0,0,0.02)",
+    boxShadow: "0 20px 60px rgba(0, 50, 100, 0.15), inset 0 -5px 10px rgba(0,0,0,0.02)",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -336,7 +268,6 @@ const styles: any = {
     cursor: "pointer",
     padding: "0 10px",
     transition: "0.2s",
-    ":hover": { color: "#4facfe" },
   },
   skinPreview: {
     display: "flex",
@@ -346,18 +277,15 @@ const styles: any = {
     width: "120px",
   },
   skinName: { fontSize: "0.9rem", fontWeight: "bold", color: "#888" },
-
-  // --- CHỈNH SỬA 3: CSS Container cho ảnh (Đơn giản hóa) ---
   tankContainer: {
     position: "relative",
-    width: "80px", // Tăng kích thước lên chút cho rõ ảnh
+    width: "80px",
     height: "60px",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     animation: "tank-bounce 2s infinite ease-in-out",
   },
-
   playButton: {
     width: "100%",
     padding: "1rem",
@@ -372,7 +300,6 @@ const styles: any = {
     transition: "all 0.2s",
     boxShadow: "0 10px 25px rgba(255, 117, 140, 0.5)",
   },
-
   menuContainer: {
     position: "absolute",
     top: "30px",

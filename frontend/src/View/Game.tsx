@@ -1,6 +1,7 @@
 "use client";
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
 import drawMap from "../Animation/drawMap";
+import { useRouter } from "next/navigation";
 import { tankBulletAnimation } from "../Animation/tankBulletAnimation";
 import { tankGunAnimation } from "../Animation/tankGunAnimation";
 import { tankHealthAnimation } from "../Animation/tankHealthAnimation";
@@ -28,17 +29,22 @@ import useLoadMapIcons from "../Hook/useLoadMapIcons";
 import useLoadItem from "../Hook/useLoadTankFeatures";
 import { SoundState } from "../Model/Sound";
 
-function Game() {
-  // Lấy ra object chứa các query parameter
-  const searchParams = new URLSearchParams(window.location.search);
-  // Lấy giá trị của 'name'
-  const playerName = searchParams.get('name'); // Giá trị đã được tự động giải mã (decode)
-  console.log("Player Name:", playerName);
+interface GameProps {
+  playerName: string;
+}
+
+function Game({ playerName }: GameProps) {
+  const router = useRouter();
+  console.log("Game nhận được tên:", playerName);
 
   // --- STATE GAME ---
+  const [isGameOver, setIsGameOver] = useState(false);
   const tankStateRef = useRef<TankState>({ serverTimestamp: 0, tankStates: {} });
   const bulletStateRef = useRef<BulletState>({ serverTimestamp: 0, bulletStates: {} });
   const dynamicMap= useRef<MapCell[][]>([]);
+  const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
+
+  const lastCamPos = useRef({ x: 0, y: 0 });
   
   // --- STATE MÀN HÌNH (VIEWPORT) ---
   const viewport = useRef({ w: 1200, h: 800 });
@@ -69,7 +75,7 @@ function Game() {
   // --- TẠO CÁC REF LƯU TRẠNG THÁI ---
   // Ref để theo dõi trạng thái tank từ server
   
-   const mapAssetsRef = useRef<any>({});
+  const mapAssetsRef = useRef<any>({});
 
   const bulletsRef = useRef<Bullet[]>([]);
   // Ref để theo dõi trạng thái các phím W A S D đang được nhấn
@@ -82,8 +88,9 @@ function Game() {
   const tankGunAnimationState = useRef<TankGunAnimationState>({})
   // Ref để lưu trữ trạng thái hoạt ảnh đạn
   const bulletAnimationState = useRef<BulletAnimationState>({})
+  // useEffect để khởi tạo, chạy hoạt ảnh và gắn event listeners
+  const isAllAssetsLoaded = isImageLoaded && isGunImageLoaded  && isBulletImageLoaded && isTreeImageLoaded && isBushImageLoaded && isGroundImageLoaded && isTowerImageLoaded && isItemImageLoaded && isMapIconsLoaded;
 
-   // useEffect để khởi tạo, chạy hoạt ảnh và gắn event listeners
   //  XỬ LÝ RESIZE MÀN HÌNH ---
   useEffect(() => {
       const handleResize = () => {
@@ -151,16 +158,50 @@ function Game() {
       
       // Nhận cập nhật Map (khi tường vỡ)
       socket.on('mapUpdate', ({ r, c, cell }) => {
+        if (!dynamicMap.current || !dynamicMap.current[r]) {
+              return; 
+          }
         console.log("Map update received:", r, c, cell);
           dynamicMap.current[r][c] = cell;
       });
+
+      socket.on('gameOver', () => {
+          console.log("Chết!");
+          setIsGameOver(true); // Hiện màn hình chết 
+
+          setTimeout(() => {
+              router.push('/'); 
+          }, 3000);
+      });
+
+      socket.on('sessionRestored', (data) => {
+          console.log("Đã khôi phục phiên chơi:", data);
+      });
+
+      if (playerName) {
+          console.log("Gửi lệnh RegisterName:", playerName);
+          socket.emit('registerName', { name: playerName });
+      }
+
       return () => { 
-          socket.off('state');
           socket.off('tankState'); socket.off('bulletState'); 
           socket.off('mapData'); socket.off('mapUpdate'); 
+          socket.off('gameOver'); socket.off('sessionRestored');
       };
     }
-  }, [socket, isConnected]);
+  }, [socket, isConnected, playerName, router]);
+
+  useEffect(() => {
+      const interval = setInterval(() => {
+          if (tankStateRef.current && tankStateRef.current.tankStates) {
+              // Chuyển từ Object {id: tank} sang Array [tank, tank]
+              const playersArray = Object.values(tankStateRef.current.tankStates);
+              setLeaderboardData(playersArray);
+          }
+      }, 1000); // 1000ms = 1 giây update 1 lần
+
+      return () => clearInterval(interval);
+  }, []);
 
   //  ANIMATION FUNCTIONS---
   // Animation cho tank di chuyen
@@ -320,8 +361,7 @@ function Game() {
         camY = Math.max(0, Math.min(camY, MAP_REAL_H - viewport.current.h));
 
         // console.log("Cam clamped:", camX, camY);
-        
-       
+      
     }    // --- VẼ THẾ GIỚI TRONG KHU VỰC VIEWPORT 100% ---
     ctx.save();
     ctx.translate(-camX, -camY); // Dịch chuyển thế giới
@@ -354,14 +394,38 @@ function Game() {
   }, [isImageLoaded, isGunImageLoaded, isBulletImageLoaded, isTreeImageLoaded, isBushImageLoaded, isMapLoaded, isMapIconsLoaded, isItemImageLoaded, drawMapCB, socket, viewport, tankMovingAnimationCB, tankGunAnimationCB, tankBulletAnimationCB, tankUpdatePosistionCB]);
 
   useEffect(() => {
-    if (isImageLoaded && isMapLoaded && isMapIconsLoaded) animationFrameId.current = requestAnimationFrame(animate);
+    animationFrameId.current = requestAnimationFrame(animate);
     return () => { if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current); };
-  }, [animate, isImageLoaded, isMapLoaded, isMapIconsLoaded]);
+  }, [animate]);
+
+  if (!isAllAssetsLoaded || !isMapLoaded) {
+      return (
+          <div className="w-full h-screen bg-gray-900 flex flex-col items-center justify-center text-white">
+              <div className="text-2xl font-bold mb-4">🚀 Đang tải tài nguyên...</div>
+              <div className="w-64 h-2 bg-gray-700 rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 animate-pulse w-full"></div>
+              </div>
+          </div>
+      );
+  }
 
   // Canvas full màn hình, không viền thừa
   return (
   <div className="w-full h-screen bg-gray-900 overflow-hidden relative">
-    <Scoreboard />
+    <Scoreboard 
+    players={leaderboardData} 
+        myId={socket?.id}
+    />
+
+    {isGameOver && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-500">
+            <h1 className="text-8xl font-black text-red-600 tracking-widest drop-shadow-[0_0_15px_rgba(220,38,38,0.8)] animate-pulse">
+                YOU DIED
+            </h1>
+            <p className="text-white mt-4 text-xl font-mono">Đang về sảnh...</p>
+        </div>
+    )}
+    
     <canvas
       ref={canvasRef}
       width={CANVAS_WIDTH}
