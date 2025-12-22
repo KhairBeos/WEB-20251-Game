@@ -138,6 +138,9 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onPaste={
+                    (e) => { e.preventDefault(); return false; }
+                }
                 style={styles.input}
             />
             <button

@@ -6,6 +6,7 @@ const BASE_SPEED = 4;
 const SHOOT_COOLDOWN = 1000;
 
 export class TankStateManager {
+ 
   update(
     tankState: TankState,
     tankInputBuffer: TankInputBuffer,
@@ -18,6 +19,7 @@ export class TankStateManager {
       const tank = tankStates[pid];
       if (tank.health <= 0) {
         delete tankStates[pid];
+        server.emit('gameOver', pid);
       }
     }
 

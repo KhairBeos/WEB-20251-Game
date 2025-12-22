@@ -163,8 +163,8 @@ function Game({ playerName }: GameProps) {
           dynamicMap.current[r][c] = cell;
       });
 
-      socket.on('gameOver', () => {
-          console.log("Chết!");
+      socket.on('gameOver', (playerId) => {
+          if(playerId !== socket.id) return;
           setIsGameOver(true); // Hiện màn hình chết 
 
           setTimeout(() => {

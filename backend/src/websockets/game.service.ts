@@ -3,6 +3,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Server } from 'socket.io';
 
 // Import MapData nội bộ (Copy file MapData vào backend/src/Model/MapData.ts trước nhé)
+import { sessionStore } from 'src/auth/session.store';
 import { generateMap, MapData } from 'src/websockets/model/MapData';
 import { bulletVSTankCollision } from './collision/BulletVSTankCollision';
 import { bulletWallCollision } from './collision/BulletWallCollision';
@@ -17,7 +18,6 @@ import { TowerService } from './service/TowerService';
 import { BulletStateManager } from './state/BulletStateManager';
 import { TankStateManager } from './state/TankStateManager';
 import { GridSpatial } from './utils/GridSpartial';
-import { sessionStore } from 'src/auth/session.store';
 
 @Injectable()
 export class GameService implements OnModuleInit {
@@ -128,6 +128,8 @@ export class GameService implements OnModuleInit {
       }, 100);
     }
   }
+
+
   removePlayer(id: string) {
     console.log(`Player ${id} disconnected (Connection lost).`);
 
@@ -139,6 +141,7 @@ export class GameService implements OnModuleInit {
 
     sessionStore.delete(this.tankSessions.get(id) || '');
     this.tankSessions.delete(id);
+
   }
 
   handleTankInput(id: string, input: TankInput) {
