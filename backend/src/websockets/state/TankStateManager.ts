@@ -1,3 +1,4 @@
+import { BulletInput, BulletInputBuffer } from '../model/Bullet';
 import { TankState, TankInputBuffer } from '../model/Tank';
 
 const TANK_ROTATE_SPEED = 3;
@@ -8,28 +9,41 @@ export class TankStateManager {
   update(
     tankState: TankState,
     tankInputBuffer: TankInputBuffer,
-    handleBulletFire: (
-      pid: string,
-      payload: {
-        clientTimestamp: number;
-        startX: number;
-        startY: number;
-        width: number;
-        height: number;
-        degree: number;
-        speed: number;
-        damage: number;
-        ownerId: string;
-        
-      },
-    ) => void,
+    bulletInputBuffer: BulletInputBuffer,
     server: any,
   ) {
+    const tankStates = tankState.tankStates;
     // Xoa tanks hết máu
-    for (const pid in tankState.tankStates) {
-      const tank = tankState.tankStates[pid];
+    for (const pid in tankStates) {
+      const tank = tankStates[pid];
       if (tank.health <= 0) {
-        delete tankState.tankStates[pid];
+        delete tankStates[pid];
+      }
+    }
+
+    // Cập nhât level dựa trên điểm số, mỗi 1 cấp độ 10 điểm
+    for (const pid in tankStates) {
+      const tank = tankStates[pid];
+      const newLevel = Math.min(Math.floor(tank.score / 10) + 1, 100); // max level 100
+      if (newLevel !== tank.level) {
+        const lvDiff = newLevel - tank.level;
+
+        tank.level = newLevel;
+        // Tăng thuộc tính khi lên cấp
+        tank.maxHealth += lvDiff * 10; // max máu thêm = 100 * 10 = 1000 máu
+        tank.damage += lvDiff * 0.5 ; // damage thêm = 0.5 * 100 = 50 damage
+        tank.speed += lvDiff * 0.1; // speed thêm = 0.1 * 100 = 10 speed
+      }
+    }
+
+    // Kiểm tra item expire
+    const nowTs = Date.now();
+    for (const pid in tankStates) {
+      const tank = tankStates[pid];
+      if (tank.itemKind !== 'none' && tank.itemExpire && nowTs > tank.itemExpire) {
+        tank.shield = 0;
+        tank.itemKind = 'none';
+        tank.itemExpire = 0;
       }
     }
 
@@ -85,21 +99,25 @@ export class TankStateManager {
             tank.lastShootTimestamp = now;
             console.log(`Tank ${pid} fired a bullet.`);
             server.emit('fireBullet', pid);
-            handleBulletFire(pid, {
+            const bulletInput: BulletInput = {
               clientTimestamp: now,
               startX: tank.x + (tank.width / 2) * Math.sin(angleInRadians),
               startY: tank.y + (tank.height / 2) * -Math.cos(angleInRadians),
               width: 32,
               height: 36,
               degree: tank.degree,
-              speed: tank.speed * 2,
+              speed: newSpeed * 2,
               damage: newDamage,
               ownerId: pid,
-            });
+            };
+            bulletInputBuffer[pid].push(bulletInput);
           }
         }
       }
     }
+
+
+
     // clear inputs
     for (const playerId in tankInputBuffer) {
       tankInputBuffer[playerId] = [];

@@ -11,13 +11,13 @@ export class BulletStateManager {
     bulletInputBuffer: BulletInputBuffer,
     tankState: TankState,
   ) {
-    
     const bullets = bulletState.bulletStates;
 
     for (const pid in bulletInputBuffer) {
       const tank = tankState.tankStates[pid];
       let inputs = bulletInputBuffer[pid];
       const now = Date.now();
+      inputs.sort((a, b) => a.clientTimestamp - b.clientTimestamp);
       inputs = inputs.filter((i) => now - i.clientTimestamp <= 100);
 
       // Tạo đạn
@@ -38,7 +38,7 @@ export class BulletStateManager {
             degree: i.degree + spreadAngle,
             speed: i.speed,
             damage: tank.damage,
-            timeFired: now,
+            lastTimeFired: i.clientTimestamp,
           } as Bullet;
         }
       }
@@ -53,7 +53,7 @@ export class BulletStateManager {
       // Kiểm tra đạn tồn tại quá lâu (5 giây)
       for (const bid in bullets) {
         const b = bullets[bid];
-        if (now - b.timeFired > 5000) {
+        if (now - b.lastTimeFired > 5000) {
           delete bullets[bid];
         }
       }

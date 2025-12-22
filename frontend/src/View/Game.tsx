@@ -1,14 +1,19 @@
 "use client";
 import { RefObject, useCallback, useEffect, useRef, useState } from "react";
+import drawMap from "../Animation/drawMap";
 import { tankBulletAnimation } from "../Animation/tankBulletAnimation";
 import { tankGunAnimation } from "../Animation/tankGunAnimation";
+import { tankHealthAnimation } from "../Animation/tankHealthAnimation";
 import { tankMovingAnimation } from "../Animation/tankMovingAnimation";
-import { TILE_SIZE, MAX_DPR, CANVAS_WIDTH, CANVAS_HEIGHT, DEBUG_MODE } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
+import { CANVAS_HEIGHT, CANVAS_WIDTH, DEBUG_MODE, MAX_DPR, TILE_SIZE } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
 import { useGameInput } from "../Hook/useGameInput";
-import useLoadLazeBullet from "../Hook/useLoadLazeBullet";
+import useLoadBush from "../Hook/useLoadBush";
+import useLoadGround from "../Hook/useLoadGround";
 import useLoadTankBody from "../Hook/useLoadTankBody";
 import useLoadTankBullet from "../Hook/useLoadTankBullet";
 import useLoadTankGun from "../Hook/useLoadTankGun";
+import useLoadTower from "../Hook/useLoadTower";
+import useLoadTree from "../Hook/useLoadTree";
 import { useSocket } from "../Hook/useSocket";
 import { Bullet, BulletAnimationState, BulletState } from "../Model/Bullet";
 import { KeyMap } from "../Model/KeyMap";
@@ -16,17 +21,9 @@ import { MAP_COLS, MAP_ROWS, MapCell } from "../Model/MapData";
 import { TankAnimationState, TankState } from "../Model/Tank";
 import { TankGunAnimationState } from "../Model/TankGun";
 import { tankUpdatePosistion } from "../Position/tankUpdatePosition";
-import { tankHealthAnimation } from "../Animation/tankHealthAnimation";
-import useLoadTree from "../Hook/useLoadTree";
-import useLoadBush from "../Hook/useLoadBush";
-import drawMap from "../Animation/drawMap";
-import useLoadGround from "../Hook/useLoadGround";
-import useLoadTower from "../Hook/useLoadTower";
-import { useSearchParams } from "next/navigation";
 import Scoreboard from "./Scoreboard";
 
 // --- BẬT DEBUG MODE: True để hiện khung va chạm ---
-import useLoadTankFeatures from "../Hook/useLoadTankFeatures";
 import useLoadMapIcons from "../Hook/useLoadMapIcons";
 import useLoadItem from "../Hook/useLoadTankFeatures";
 import { SoundState } from "../Model/Sound";
@@ -54,7 +51,7 @@ function Game() {
   // //  LOAD ASSET ---
   const {imageRef:tankBodyImageRef,isImageLoaded} = useLoadTankBody()
   const {imageRef:tankGunImageRef,isImageLoaded:isGunImageLoaded} =  useLoadTankGun()
-  const {imageRef:lazeImageRef,isImageLoaded:isLazeImageLoaded} =  useLoadLazeBullet()
+  
   const {imageRef:bulletImageRef,isImageLoaded:isBulletImageLoaded} =  useLoadTankBullet()
   const {imageRef:treeImageRef,isImageLoaded:isTreeImageLoaded} =  useLoadTree()
   const {imageRef:bushImageRef,isImageLoaded:isBushImageLoaded} =  useLoadBush()
@@ -316,13 +313,13 @@ function Game() {
         // 1. Tính vị trí muốn camera đến (Tank ở giữa)
         camX = myTank.x - viewport.current.w / 2;
         camY = myTank.y - viewport.current.h / 2; 
-        console.log("Cam target:", camX, camY);
+        // console.log("Cam target:", camX, camY);
 
         // 2. Giới hạn Camera không đi ra ngoài biên map
         camX = Math.max(0, Math.min(camX, MAP_REAL_W - viewport.current.w));
         camY = Math.max(0, Math.min(camY, MAP_REAL_H - viewport.current.h));
 
-        console.log("Cam clamped:", camX, camY);
+        // console.log("Cam clamped:", camX, camY);
         
        
     }    // --- VẼ THẾ GIỚI TRONG KHU VỰC VIEWPORT 100% ---
@@ -354,7 +351,7 @@ function Game() {
     }
     
     animationFrameId.current = requestAnimationFrame(animate);
-  }, [isImageLoaded, isGunImageLoaded, isLazeImageLoaded, isBulletImageLoaded, isTreeImageLoaded, isBushImageLoaded, isMapLoaded, isMapIconsLoaded, isItemImageLoaded, drawMapCB, socket, viewport, tankMovingAnimationCB, tankGunAnimationCB, tankBulletAnimationCB, tankUpdatePosistionCB]);
+  }, [isImageLoaded, isGunImageLoaded, isBulletImageLoaded, isTreeImageLoaded, isBushImageLoaded, isMapLoaded, isMapIconsLoaded, isItemImageLoaded, drawMapCB, socket, viewport, tankMovingAnimationCB, tankGunAnimationCB, tankBulletAnimationCB, tankUpdatePosistionCB]);
 
   useEffect(() => {
     if (isImageLoaded && isMapLoaded && isMapIconsLoaded) animationFrameId.current = requestAnimationFrame(animate);

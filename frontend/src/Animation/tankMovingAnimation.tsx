@@ -20,6 +20,7 @@ export const tankMovingAnimation = (
 
     if(viewerId == null) return
     const viewerTank = tankStates[viewerId];
+    // console.log("Viewer tank:", viewerTank);
 
     // Duyệt qua tất cả các tank trong trạng thái nhận được từ server
     for (const playerId in tankStates) {
@@ -138,7 +139,7 @@ export const tankMovingAnimation = (
       }
       ctx.drawImage(img, destX, destY, destWidth, destHeight);
 
-
+      // console.log("Drawing tank", playerId, "at", p.x, p.y, "inBush:", p.inBush);
       
       // Debug: Hiển thị bounding box tank và bán kính va chạm
       if (DEBUG_MODE) {

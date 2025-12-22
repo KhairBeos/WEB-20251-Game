@@ -1,11 +1,12 @@
-import { MapCell, TILE_SIZE, MAP_ROWS, MAP_COLS } from 'src/websockets/model/MapData';
+import { MapCell, TILE_SIZE, MAP_ROWS, MAP_COLS, MapData } from 'src/websockets/model/MapData';
 import { Tank } from '../model/Tank';
 
 export function tankWallCollision(
-  map: MapCell[][],
+  mapData: MapData,
   tankStates: { [playerId: string]: Tank },
   server: any,
 ) {
+  const map = mapData.map;
   for (const id in tankStates) {
     const tank = tankStates[id];
     const R = tank.radius;
@@ -53,6 +54,7 @@ export function tankWallCollision(
               tank.itemKind = 'health';
               tank.itemExpire = Date.now() + 2000; // 2s
               map[rootR][rootC] = { root_r: -1, root_c: -1, val: 0 };
+              mapData.itemNumber--;
               server.emit('mapUpdate', { r: rootR, c: rootC, cell: map[rootR][rootC] });
               break;
             case 102: // shield
@@ -60,18 +62,21 @@ export function tankWallCollision(
               tank.itemKind = 'shield';
               tank.itemExpire = Date.now() + 10000; // 10s
               map[rootR][rootC] = { root_r: -1, root_c: -1, val: 0 };
+              mapData.itemNumber--;
               server.emit('mapUpdate', { r: rootR, c: rootC, cell: map[rootR][rootC] });
               break;
             case 103: // speed boost
               tank.itemKind = 'speed';
               tank.itemExpire = Date.now() + 10000; // 10s
               map[rootR][rootC] = { root_r: -1, root_c: -1, val: 0 };
+              mapData.itemNumber--;
               server.emit('mapUpdate', { r: rootR, c: rootC, cell: map[rootR][rootC] });
               break;
             case 104: // damage boost
               tank.itemKind = 'damage';
               tank.itemExpire = Date.now() + 10000; // 10s
               map[rootR][rootC] = { root_r: -1, root_c: -1, val: 0 };
+              mapData.itemNumber--;
               server.emit('mapUpdate', { r: rootR, c: rootC, cell: map[rootR][rootC] });
               break;
           }

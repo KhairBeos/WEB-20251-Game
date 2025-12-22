@@ -21,6 +21,13 @@ export type MapCell = {
   val: number;
 };
 
+export type MapData = {
+  map: MapCell[][];
+  itemNumber: number;
+  towerNumber: number;
+  bushNumber: number;
+}
+
 // 3. Spawn Point
 export const SPAWNPOINTS = [
   { r: 6, c: 6 },
@@ -29,7 +36,11 @@ export const SPAWNPOINTS = [
   { r: MAP_ROWS - 8, c: MAP_COLS - 8 },
 ];
 
-const generateMap = () => {
+export const generateMap = (): MapData => {
+  var itemNumber = 0;
+  var towerNumber = 0;
+  var bushNumber = 0;
+
   // Tạo ma trận map ban đầu
   const map: MapCell[][] = [];
   for (let r = 0; r < MAP_ROWS; r++) {
@@ -57,12 +68,12 @@ const generateMap = () => {
       sizeH = 2;
     } // Bush 3x2
 
-    if (r + sizeH > MAP_ROWS || c + sizeW > MAP_COLS) return;
+    if (r + sizeH > MAP_ROWS || c + sizeW > MAP_COLS) return false;
 
     // Check trống
     for (let i = 0; i < sizeH; i++) {
       for (let j = 0; j < sizeW; j++) {
-        if (map[r + i][c + j].val !== 0) return;
+        if (map[r + i][c + j].val !== 0) return false;
       }
     }
 
@@ -77,6 +88,7 @@ const generateMap = () => {
         }
       }
     }
+    return true;
   };
 
   // 1. Viền cây (Tree 40x80 = 1x2 tile)
@@ -95,11 +107,11 @@ const generateMap = () => {
   for (let r = 4; r < MAP_ROWS - 4; r += 2) {
     for (let c = 4; c < MAP_COLS - 4; c += 2) {
       if (Math.random() < 0.2) {
-        placeObject(r, c, 4);
+        if(placeObject(r, c, 4)) towerNumber++;
       } else if (Math.random() < 0.05) {
         // Đặt Bush bên trong: chọn ngẫu nhiên 1 trong 4 biến thể 11..14
         const variant = 11 + Math.floor(Math.random() * 4);
-        placeObject(r, c, variant);
+        if(placeObject(r, c, variant)) bushNumber++;
       }
     }
   }
@@ -125,27 +137,32 @@ const generateMap = () => {
     if (nearSpawn) continue;
     if (map[r][c].val !== 0) continue;
     const type = pickupTypes[Math.floor(Math.random() * pickupTypes.length)];
-    placeObject(r, c, type);
+    if(placeObject(r, c, type)) itemNumber++;
     placed++;
   }
 
-  SPAWNPOINTS.forEach((pos) => {
-    // Dọn dẹp 5x5 quanh spawn
-    for (let i = -2; i <= 3; i++) {
-      for (let j = -2; j <= 3; j++) {
-        if (map[pos.r + i] && map[pos.r + i][pos.c + j] !== undefined)
-          map[pos.r + i][pos.c + j] = {
-            root_r: -1,
-            root_c: -1,
-            val: 0,
-          };
-      }
-    }
-    // Đặt trụ spawn
-    //map[pos.r][pos.c] = { root_r: pos.r, root_c: pos.c, val: 9 };
-  });
+  // SPAWNPOINTS.forEach((pos) => {
+  //   // Dọn dẹp 5x5 quanh spawn
+  //   for (let i = -2; i <= 3; i++) {
+  //     for (let j = -2; j <= 3; j++) {
+  //       if (map[pos.r + i] && map[pos.r + i][pos.c + j] !== undefined)
+  //         map[pos.r + i][pos.c + j] = {
+  //           root_r: -1,
+  //           root_c: -1,
+  //           val: 0,
+  //         };
+  //     }
+  //   }
+  //   // Đặt trụ spawn
+  //   //map[pos.r][pos.c] = { root_r: pos.r, root_c: pos.c, val: 9 };
+  // });
 
-  return map;
+  return {
+    map,
+    itemNumber,
+    towerNumber,
+    bushNumber,
+  };
 };
 
-export const INITIAL_MAP = generateMap();
+

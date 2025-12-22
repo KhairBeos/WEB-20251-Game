@@ -1,9 +1,9 @@
-import { MapCell, MAP_ROWS, MAP_COLS, SPAWNPOINTS, TILE_SIZE } from '../model/MapData';
+import { MapCell, MAP_ROWS, MAP_COLS, SPAWNPOINTS, TILE_SIZE, MapData } from '../model/MapData';
 import { Tank } from '../model/Tank';
 
 export class PickupService {
   constructor(
-    private map: MapCell[][],
+    private mapData: MapData,
     private server: any,
   ) {}
 
@@ -11,24 +11,26 @@ export class PickupService {
   spawnRandomPickup(): boolean {
     const pickupTypes = [101, 102, 103, 104];
     let safety = 0;
-    while (safety++ < 2000) {
+    while (safety++ < 1000) {
+      if (this.mapData.itemNumber >= 50) break; // giới hạn số lượng item trên map
       const r = Math.floor(Math.random() * MAP_ROWS);
       const c = Math.floor(Math.random() * MAP_COLS);
       if (r < 3 || r > MAP_ROWS - 4 || c < 3 || c > MAP_COLS - 4) continue;
-      // tránh quanh spawnpoints
-      let nearSpawn = false;
-      for (const sp of SPAWNPOINTS) {
-        if (Math.abs(sp.r - r) <= 4 && Math.abs(sp.c - c) <= 4) {
-          nearSpawn = true;
-          break;
-        }
-      }
-      if (nearSpawn) continue;
-      if (this.map[r][c].val !== 0) continue;
+      // // tránh quanh spawnpoints
+      // let nearSpawn = false;
+      // for (const sp of SPAWNPOINTS) {
+      //   if (Math.abs(sp.r - r) <= 4 && Math.abs(sp.c - c) <= 4) {
+      //     nearSpawn = true;
+      //     break;
+      //   }
+      // }
+      // if (nearSpawn) continue;
+      if (this.mapData.map[r][c].val !== 0) continue;
       const type = pickupTypes[Math.floor(Math.random() * pickupTypes.length)];
-      this.map[r][c] = { root_r: -1, root_c: -1, val: type };
+      this.mapData.map[r][c] = { root_r: -1, root_c: -1, val: type };
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
-      this.server?.emit('mapUpdate', { r, c, cell: this.map[r][c] });
+      this.server?.emit('mapUpdate', { r, c, cell: this.mapData.map[r][c] });
+      this.mapData.itemNumber++;
       return true;
     }
     return false;
