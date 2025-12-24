@@ -23,8 +23,6 @@ import { TankGunAnimationState } from "../Model/TankGun";
 import { tankUpdatePosistion } from "../Position/tankUpdatePosition";
 import Scoreboard from "./Scoreboard";
 import MobileDPad from "../Component/MobileDPad";
-
-// --- BẬT DEBUG MODE: True để hiện khung va chạm ---
 import useLoadMapIcons from "../Hook/useLoadMapIcons";
 import useLoadItem from "../Hook/useLoadTankFeatures";
 import { SoundState } from "../Model/Sound";
@@ -52,6 +50,8 @@ function Game({ playerName }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameId = useRef<number>(null);
   const dprRef = useRef<number>(1);
+  const cssViewportRef = useRef<{ w: number; h: number }>({ w: CANVAS_WIDTH, h: CANVAS_HEIGHT });
+  const [isPortrait, setIsPortrait] = useState(false);
 
   // //  LOAD ASSET ---
   const {imageRef:tankBodyImageRef,isImageLoaded} = useLoadTankBody()
@@ -91,6 +91,9 @@ function Game({ playerName }: GameProps) {
   const keysPressed = useGameInput();
   const touchInput = useTouchInput();
 
+  // --- Tank position interpolation (smooth movement between server updates) ---
+  const tankPosInterpolationRef = useRef<{ [playerId: string]: { lastX: number; lastY: number; lastUpdateTime: number } }>({});
+
   //  TAO ANIMATION STATE DE RENDER ANIMATION ---
   // Ref để lưu trữ trạng thái hoạt ảnh di chuyen của tank
   const tankAnimationState = useRef<TankAnimationState>({})
@@ -104,10 +107,13 @@ function Game({ playerName }: GameProps) {
   //  XỬ LÝ RESIZE MÀN HÌNH ---
   useEffect(() => {
       const handleResize = () => {
-          // Cập nhật kích thước viewport theo cửa sổ trình duyệt (không ép bội số/cố định)
-          const wCss = window.innerWidth;
-          const hCss = window.innerHeight;
+          // Cập nhật kích thước viewport theo cửa sổ trình duyệt (prioritize visualViewport on mobile)
+          const vv = (window as any).visualViewport;
+          const wCss = vv && typeof vv.width === 'number' ? vv.width : window.innerWidth;
+          const hCss = vv && typeof vv.height === 'number' ? vv.height : window.innerHeight;
           viewport.current = { w: wCss, h: hCss };
+          // store CSS-pixel viewport separately so animate() can use the exact CSS size
+          cssViewportRef.current = { w: wCss, h: hCss };
           dprRef.current = Math.max(1, Math.min(window.devicePixelRatio || 1, MAX_DPR));
           const canvas = canvasRef.current;
           if (canvas) {
@@ -121,6 +127,16 @@ function Game({ playerName }: GameProps) {
       };
         handleResize(); // Gọi ngay lần đầu để khớp 100vw/100vh
         window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+        // portrait detection for mobile: block play when portrait to avoid unfair vision
+        const checkPortrait = () => {
+          const w = window.innerWidth;
+          const h = window.innerHeight;
+          setIsPortrait(h > w && w < 900); // treat narrow widths as mobile portrait
+        };
+        checkPortrait();
+        window.addEventListener('resize', checkPortrait);
+        window.addEventListener('orientationchange', checkPortrait);
         return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -364,13 +380,16 @@ function Game({ playerName }: GameProps) {
     // --- DPI + world scaling ---
     // We keep high-DPI buffer and optionally scale the world so that
     // small screens 'zoom out' to show similar world area.
-    const DESIGN_VIEW_W = 1200; // target virtual viewport width (world units)
-    const DESIGN_VIEW_H = 800;  // target virtual viewport height
+    // Desired visible area expressed as number of tiles (keeps world-units consistent)
+    const VISIBLE_COLS = 30; // how many map columns to aim to display
+    const VISIBLE_ROWS = 20; // how many map rows to aim to display
+    const DESIGN_VIEW_W = VISIBLE_COLS * TILE_SIZE; // target virtual viewport width (world units)
+    const DESIGN_VIEW_H = VISIBLE_ROWS * TILE_SIZE;  // target virtual viewport height
     // Base device pixel ratio transform
     const baseDpr = dprRef.current;
-    // Raw CSS-pixel viewport (before world scaling)
-    const rawViewW = canvas.width / baseDpr;
-    const rawViewH = canvas.height / baseDpr;
+    // Raw CSS-pixel viewport (before world scaling). Prefer the CSS viewport saved on resize
+    const rawViewW = cssViewportRef.current?.w ?? (canvas.width / baseDpr);
+    const rawViewH = cssViewportRef.current?.h ?? (canvas.height / baseDpr);
     // Compute a world scale so that on small screens we show more of the world
     const worldScale = Math.min(1, rawViewW / DESIGN_VIEW_W, rawViewH / DESIGN_VIEW_H);
     // Apply combined transform (DPR * worldScale) for crisp rendering + zoom
@@ -415,7 +434,7 @@ function Game({ playerName }: GameProps) {
     }
 
     // Smooth the camera to reduce visible jitter (lerp)
-    const LERP = 0.15; // smaller -> smoother/slower
+    const LERP = 0.35; // increased from 0.15 for faster camera tracking
     const smoothCamX = lastCamPos.current.x + (targetCamX - lastCamPos.current.x) * LERP;
     const smoothCamY = lastCamPos.current.y + (targetCamY - lastCamPos.current.y) * LERP;
     lastCamPos.current.x = smoothCamX;
@@ -442,6 +461,30 @@ function Game({ playerName }: GameProps) {
     }
 
     // --- VẼ THẾ GIỚI TRONG KHU VỰC VIEWPORT 100% ---
+    // --- Smooth tank positions via interpolation ---
+    const now = Date.now();
+    const TANK_LERP = 0.25; // smooth tank movement between server updates
+    for (const playerId in tankStateRef.current.tankStates) {
+      const tank = tankStateRef.current.tankStates[playerId];
+      if (!tankPosInterpolationRef.current[playerId]) {
+        tankPosInterpolationRef.current[playerId] = { lastX: tank.x, lastY: tank.y, lastUpdateTime: now };
+      }
+      const interp = tankPosInterpolationRef.current[playerId];
+      // Smooth position transition
+      tank.x = interp.lastX + (tank.x - interp.lastX) * TANK_LERP;
+      tank.y = interp.lastY + (tank.y - interp.lastY) * TANK_LERP;
+    }
+    // Update last positions for next frame
+    for (const playerId in tankStateRef.current.tankStates) {
+      const tank = tankStateRef.current.tankStates[playerId];
+      const interp = tankPosInterpolationRef.current[playerId];
+      if (interp) {
+        interp.lastX = tank.x;
+        interp.lastY = tank.y;
+        interp.lastUpdateTime = now;
+      }
+    }
+
     ctx.save();
     ctx.translate(-camX, -camY); // Dịch chuyển thế giới
 
@@ -503,6 +546,17 @@ function Game({ playerName }: GameProps) {
         </div>
     )}
     
+    {/* Portrait overlay: block play on tall/narrow screens */}
+    {isPortrait && (
+      <div className="absolute inset-0 z-60 flex flex-col items-center justify-center bg-black/90 text-white p-6">
+        <div className="text-2xl font-bold mb-4">Vui lòng xoay điện thoại sang ngang</div>
+        <div className="text-sm opacity-80 mb-6">Game yêu cầu chế độ ngang để công bằng về tầm nhìn.</div>
+        <div className="w-28 h-28 rounded-full border-4 border-white/30 flex items-center justify-center">
+          <div className="transform rotate-90 text-3xl">↺</div>
+        </div>
+      </div>
+    )}
+
     <canvas
       ref={canvasRef}
       width={CANVAS_WIDTH}
