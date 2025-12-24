@@ -11,7 +11,7 @@ export const tankGunAnimation = (
   keysPressed: RefObject<KeyMap>,
   frames: RefObject<HTMLImageElement[]>,
   viewerId?: string,
-  fireSoundRef?: RefObject<HTMLAudioElement>,
+  fireSoundRef?: RefObject<HTMLAudioElement | null>,
 ) => {
  
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---

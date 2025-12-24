@@ -132,3 +132,21 @@ html, body {
 *, *::before, *::after {
   box-sizing: border-box;
 }
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  html, body {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  canvas {
+    display: block !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    touch-action: none;
+  }
+}
+

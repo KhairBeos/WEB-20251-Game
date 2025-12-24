@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { TILE_SIZE, MAP_ROWS, MAP_COLS, MapCell } from 'src/websockets/model/MapData';
 import { Bullet } from '../model/Bullet';
-import { Tank, TankState } from '../model/Tank';
+import { TankState } from '../model/Tank';
+import { BulletPool } from '../utils/BulletPool';
 
 // Trước đây dùng hitbox tròn cho cây 3x3; nay cây (10) và bụi (11..14)
 // là vật cản chữ nhật (1x2 và 3x2). Đạn chạm là dừng (không trừ máu).
@@ -10,6 +13,7 @@ export function bulletWallCollision(
   bulletState: { [bulletId: string]: Bullet },
   tankState: TankState,
   server: any,
+  pool?: BulletPool,
   onTowerDestroyed?: (rootR: number, rootC: number) => void,
 ) {
   const removedBullets: string[] = [];
@@ -47,7 +51,7 @@ export function bulletWallCollision(
       if (newVal === 0) {
         const shooter = tankState.tankStates[bullet.ownerId];
         if (shooter) {
-            shooter.score += 5;
+          shooter.score += 5;
         }
         // console.log(`Player ${bullet.ownerId} scored 5 points for destroying a wall. Total score: ${tankState.tankStates[bullet.ownerId].score}`);
         // Phá hủy hoàn toàn: Xóa cả 4 ô (2x2)
@@ -78,6 +82,7 @@ export function bulletWallCollision(
     }
     // Xóa các viên đạn đã va chạm
     for (const bid of removedBullets) {
+      if (pool && bulletState[bid]) pool.release(bulletState[bid]);
       delete bulletState[bid];
     }
   }

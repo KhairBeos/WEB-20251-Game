@@ -1,5 +1,14 @@
-import { MapCell, TILE_SIZE, MAP_ROWS, MAP_COLS, MapData } from 'src/websockets/model/MapData';
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import { TILE_SIZE, MAP_ROWS, MAP_COLS, MapData } from 'src/websockets/model/MapData';
 import { Tank } from '../model/Tank';
+
+interface CollisionInfo {
+  distance: number;
+  overlap: number;
+  distX: number;
+  distY: number;
+}
 
 export function tankWallCollision(
   mapData: MapData,
@@ -17,6 +26,7 @@ export function tankWallCollision(
     const bottomRow = Math.floor((tank.y + R) / TILE_SIZE);
 
     let inBush = 'none';
+    let closestCollision: CollisionInfo | null = null;
 
     for (let row = topRow; row <= bottomRow; row++) {
       for (let col = leftCol; col <= rightCol; col++) {
@@ -44,10 +54,10 @@ export function tankWallCollision(
           inBush = `bush_${rootR}_${rootC}`;
           continue;
         }
-       
+
         // Nếu là item pickup (101..104)
         if (val >= 101 && val <= 104) {
-          if(tank.itemKind !== 'none') continue; // Đang có item rồi, không nhặt thêm
+          if (tank.itemKind !== 'none') continue; // Đang có item rồi, không nhặt thêm
           switch (root.val) {
             case 101: // health
               tank.health = Math.min(tank.maxHealth, tank.health + 50);
@@ -80,7 +90,6 @@ export function tankWallCollision(
               server.emit('mapUpdate', { r: rootR, c: rootC, cell: map[rootR][rootC] });
               break;
           }
-          
         }
 
         // Các vật thể còn lại coi là vật cản: tường/tower (1..4), cây viền (10)
@@ -88,12 +97,10 @@ export function tankWallCollision(
           // Tính toán vị trí của ô
           const tileX = col * TILE_SIZE + TILE_SIZE / 2;
           const tileY = row * TILE_SIZE + TILE_SIZE / 2;
-          //console.log(`Checking tank at (${tank.x.toFixed(2)}, ${tank.y.toFixed(2)}) against tile at (${tileX}, ${tileY})`);
 
           // Tính khoảng cách từ tâm tank đến tâm ô
           const distX = tank.x - tileX;
           const distY = tank.y - tileY;
-          //console.log(`Distance to tile: dx=${distX.toFixed(2)}, dy=${distY.toFixed(2)}`);
 
           const distance = Math.sqrt(distX * distX + distY * distY);
 
@@ -102,38 +109,40 @@ export function tankWallCollision(
             tank.y += tank.radius;
             continue;
           }
-          // Kiểm tra nếu ô hiện tại là tường (giá trị > 0)
-          if (map[row][col].val > 0) {
-            // Tính toán vị trí của ô
-            const tileX = col * TILE_SIZE + TILE_SIZE / 2;
-            const tileY = row * TILE_SIZE + TILE_SIZE / 2;
-            //console.log(`Checking tank at (${tank.x.toFixed(2)}, ${tank.y.toFixed(2)}) against tile at (${tileX}, ${tileY})`);
 
-            // Tính khoảng cách từ tâm tank đến tâm ô
-            const distX = tank.x - tileX;
-            const distY = tank.y - tileY;
-            //console.log(`Distance to tile: dx=${distX.toFixed(2)}, dy=${distY.toFixed(2)}`);
+          const minDistance = R + TILE_SIZE / 2;
 
-            const distance = Math.sqrt(distX * distX + distY * distY);
-            const minDistance = R + TILE_SIZE / 2;
-
-            if (distance === 0) {
-              tank.x += tank.radius;
-              tank.y += tank.radius;
-              continue;
+          if (distance < minDistance) {
+            // Va chạm xảy ra, tính toán overlap
+            const overlap = minDistance - distance;
+            
+            // Chỉ giữ va chạm gần nhất (overlap lớn nhất)
+            if (!closestCollision || overlap > closestCollision.overlap) {
+              closestCollision = {
+                distance,
+                overlap,
+                distX,
+                distY,
+              };
             }
-
-            if (distance < minDistance) {
-              // Va chạm xảy ra, tính toán lại vị trí của tank để tránh chồng lấn
-              const overlap = minDistance - distance;
-              const adjustX = (distX / distance) * overlap;
-              const adjustY = (distY / distance) * overlap;
-              tank.x += adjustX;
-              tank.y += adjustY;
-            }
-            //console.log(`Tank at (${tank.x.toFixed(2)}, ${tank.y.toFixed(2)}) checked against tile (${col}, ${row})`);
           }
         }
+      }
+    }
+
+    // Chỉ xử lý va chạm gần nhất để tránh rung lắc
+    if (closestCollision) {
+      const { distance, overlap, distX, distY } = closestCollision;
+      
+      // Threshold: chỉ adjust nếu overlap > 5px để tránh micro-oscillation
+      if (overlap > 5) {
+        // Relaxation rất thấp: 15% để giảm oscillation
+        const relaxation = 0.15;
+        const adjustX = (distX / distance) * overlap * relaxation;
+        const adjustY = (distY / distance) * overlap * relaxation;
+        
+        tank.x += adjustX;
+        tank.y += adjustY;
       }
     }
 

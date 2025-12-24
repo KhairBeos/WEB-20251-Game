@@ -9,6 +9,7 @@ export interface Bullet {
   damage: number;
   ownerId: string;
   lastTimeFired: number;
+  totalDistance: number; // track total distance traveled
 }
 export interface BulletInput {
   clientTimestamp: number;

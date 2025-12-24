@@ -14,7 +14,8 @@ const drawMap = (
     towerImg: RefObject<HTMLImageElement[]>,
     bushImg: RefObject<HTMLImageElement[]>,
     icons: RefObject<Record<string, HTMLImageElement>> | undefined,
-        ctx: CanvasRenderingContext2D,
+    ctx: CanvasRenderingContext2D,
+    options?: { drawStatic?: boolean; drawPickups?: boolean; paddingTiles?: number },
     ) => {
    
     if (dynamicMap.current.length === 0) return;
@@ -33,6 +34,8 @@ const drawMap = (
     }
     const iconImgs = icons?.current || {};
    
+    const { drawStatic = true, drawPickups = true, paddingTiles = 2 } = options || {};
+
     const TILE = TILE_SIZE; // Base unit (use canonical value)
 
     // Tính toán ô bắt đầu và kết thúc dựa trên vị trí camera và kích thước viewport
@@ -41,98 +44,86 @@ const drawMap = (
     var endCol = Math.min(MAP_COLS - 1, Math.floor((camX + viewport.current.w - 1) / TILE));
     var startRow = Math.floor(camY / TILE);
     var endRow =  Math.min(MAP_ROWS - 1, Math.floor((camY + viewport.current.h - 1) / TILE));
-    // Thêm 2 ô đệm để tránh khoảng trống khi di chuyển
-    
-    startCol = Math.max(0, startCol - 2);
-    startRow = Math.max(0, startRow - 2);
-    endCol = Math.min(MAP_COLS - 1, endCol + 2);
-    endRow = Math.min(MAP_ROWS - 1, endRow + 2);
+    // Thêm ô đệm để tránh khoảng trống khi di chuyển
+    startCol = Math.max(0, startCol - paddingTiles);
+    startRow = Math.max(0, startRow - paddingTiles);
+    endCol = Math.min(MAP_COLS - 1, endCol + paddingTiles);
+    endRow = Math.min(MAP_ROWS - 1, endRow + paddingTiles);
 
     // Vẽ các ô trong vùng nhìn thấy
     // LỚP 1: BACKGROUND (Vẽ trước)
-    for (let r = startRow; r <= endRow; r++) {
-        for (let c = startCol; c <= endCol; c++) {
-            if (imgs.ground) ctx.drawImage(imgs.ground, c*TILE, r*TILE, TILE, TILE);
-            
-            // Debug Grid mờ mờ để dễ căn chỉnh
-            if (DEBUG_MODE) {
-                ctx.strokeStyle = "rgba(255,255,255,0.05)";
-                ctx.lineWidth = 1;
-                ctx.strokeRect(c*TILE, r*TILE, TILE, TILE);
+    if (drawStatic) {
+        for (let r = startRow; r <= endRow; r++) {
+            for (let c = startCol; c <= endCol; c++) {
+                if (imgs.ground) ctx.drawImage(imgs.ground, c*TILE, r*TILE, TILE, TILE);
+                if (DEBUG_MODE) {
+                    ctx.strokeStyle = "rgba(255,255,255,0.05)";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(c*TILE, r*TILE, TILE, TILE);
+                }
+            }
+        }
+
+        for (let r = startRow; r <= endRow; r++) {
+            for (let c = startCol; c <= endCol; c++) {
+                if (map[r][c].val === 0) continue;
+                const val = map[r][c].val;
+                const x = c * TILE;
+                const y = r * TILE;
+
+                if (val >= 1 && val <= 4) {
+                    const img = val === 4 ? imgs.tow4 : val === 3 ? imgs.tow3 : val === 2 ? imgs.tow2 : imgs.tow1;
+                    if (img) ctx.drawImage(img, x, y, TOWER_DRAW_SIZE, TOWER_DRAW_SIZE);
+                    if (DEBUG_MODE) {
+                        ctx.strokeStyle = "red";
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, y, TOWER_DRAW_SIZE, TOWER_DRAW_SIZE);
+                    }
+                } else if (val === 10 && imgs.tree) {
+                    ctx.drawImage(imgs.tree, x, y, 40, 80);
+                    if (DEBUG_MODE) {
+                        ctx.strokeStyle = "#00ff00";
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, y, 40, 80);
+                    }
+                } else if (val >= 11 && val <= 14) {
+                    const bushIndex = val - 11;
+                    const bushArray = [imgs.bush1, imgs.bush2, imgs.bush3, imgs.bush4];
+                    const img = bushArray[bushIndex];
+                    if (img) ctx.drawImage(img, x, y, 120, 80);
+                    if (DEBUG_MODE) {
+                        ctx.strokeStyle = "#00ccff";
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, y, 120, 80);
+                    }
+                }
             }
         }
     }
 
-    // LỚP 2: VẬT THỂ & DEBUG HITBOX (Vẽ đè lên)
-    for (let r = startRow; r <= endRow; r++) {
-        for (let c = startCol; c <= endCol; c++) {
-        if (map[r][c].val === 0) continue; // Ô trống, không vẽ gì
-            const val = map[r][c].val;
-            const x = c * TILE;
-            const y = r * TILE;
-
-            // Vẽ Tower (2x2 tile)
-            if (val >= 1 && val <= 4) {
-                let img = val === 4 ? imgs.tow4 : val === 3 ? imgs.tow3 : val === 2 ? imgs.tow2 : imgs.tow1;
-                if (img) ctx.drawImage(img, x, y, TOWER_DRAW_SIZE, TOWER_DRAW_SIZE);
-
-                // [DEBUG] Vẽ khung đỏ (Square Hitbox)
-                if (DEBUG_MODE) {
-                    ctx.strokeStyle = "red";
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(x, y, TOWER_DRAW_SIZE, TOWER_DRAW_SIZE);
-                }
-            }
-            // Vẽ Tree viền (40x80 = 1x2 tile)
-            else if (val === 10 && imgs.tree) {
-                ctx.drawImage(imgs.tree, x, y, 40, 80);
-                if (DEBUG_MODE) {
-                    ctx.strokeStyle = "#00ff00";
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(x, y, 40, 80);
-                }
-            }
-            // Vẽ Bush (120x80 = 3x2 tile) với 4 biến thể 11..14
-            else if (val >= 11 && val <= 14) {
-                const bushIndex = val - 11; // 0..3
-                const bushArray = [imgs.bush1, imgs.bush2, imgs.bush3, imgs.bush4];
-                const img = bushArray[bushIndex];
+    if (drawPickups) {
+        for (let r = startRow; r <= endRow; r++) {
+            for (let c = startCol; c <= endCol; c++) {
+                const val = map[r][c].val;
+                if (val < 101 || val > 104) continue;
+                const x = c * TILE;
+                const y = r * TILE;
+                let img: HTMLImageElement | undefined;
+                if (val === 101) img = iconImgs.health;
+                else if (val === 102) img = iconImgs.shield;
+                else if (val === 103) img = iconImgs.speedBoost;
+                else if (val === 104) img = iconImgs.damageBoost;
                 if (img) {
-                    // Bụi luôn vẽ bình thường; không mờ theo người chơi
-                    ctx.drawImage(img, x, y, 120, 80);
+                    const size = PICKUP_ICON_SIZE;
+                    const cx = Math.round(x + (TILE - size) / 2);
+                    const cy = Math.round(y + (TILE - size) / 2);
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.drawImage(img, cx, cy, size, size);
                 }
                 if (DEBUG_MODE) {
-                    ctx.strokeStyle = "#00ccff";
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(x, y, 120, 80);
+                    ctx.strokeStyle = "#ffaa00";
+                    ctx.strokeRect(x, y, TILE, TILE);
                 }
-            }
-        
-        }
-    }
-
-    // LỚP 3: PICKUPS (vẽ sau các vật thể lớn để luôn hiển thị trên cùng)
-    for (let r = startRow; r <= endRow; r++) {
-        for (let c = startCol; c <= endCol; c++) {
-            const val = map[r][c].val;
-            if (val < 101 || val > 104) continue;
-            const x = c * TILE;
-            const y = r * TILE;
-            let img: HTMLImageElement | undefined;
-            if (val === 101) img = iconImgs.health;
-            else if (val === 102) img = iconImgs.shield;
-            else if (val === 103) img = iconImgs.speedBoost;
-            else if (val === 104) img = iconImgs.damageBoost;
-            if (img) {
-                const size = PICKUP_ICON_SIZE; 
-                const cx = Math.round(x + (TILE - size) / 2);
-                const cy = Math.round(y + (TILE - size) / 2);
-                ctx.imageSmoothingEnabled = true;
-                ctx.drawImage(img, cx, cy, size, size);
-            }
-            if (DEBUG_MODE) {
-                ctx.strokeStyle = "#ffaa00";
-                ctx.strokeRect(x, y, TILE, TILE);
             }
         }
     }

@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { BulletInput, BulletInputBuffer } from '../model/Bullet';
 import { TankState, TankInputBuffer } from '../model/Tank';
 
 const TANK_ROTATE_SPEED = 3;
-const BASE_SPEED = 4;
-const SHOOT_COOLDOWN = 1000;
+// Thời gian chờ giữa hai lần bắn (ms) để hạn chế spam
+const SHOOT_COOLDOWN = 1500;
 
 export class TankStateManager {
- 
   update(
     tankState: TankState,
     tankInputBuffer: TankInputBuffer,
@@ -33,7 +34,7 @@ export class TankStateManager {
         tank.level = newLevel;
         // Tăng thuộc tính khi lên cấp
         tank.maxHealth += lvDiff * 10; // max máu thêm = 100 * 10 = 1000 máu
-        tank.damage += lvDiff * 0.5 ; // damage thêm = 0.5 * 100 = 50 damage
+        tank.damage += lvDiff * 0.5; // damage thêm = 0.5 * 100 = 50 damage
         tank.speed += lvDiff * 0.1; // speed thêm = 0.1 * 100 = 10 speed
       }
     }
@@ -58,7 +59,7 @@ export class TankStateManager {
       inputs = inputs.filter((i) => Date.now() - i.clientTimestamp <= 100);
 
       let newDegree = tank.degree;
-      
+
       for (const input of inputs) {
         // xoay
         switch (input.rotate) {
@@ -71,11 +72,12 @@ export class TankStateManager {
         }
         const angleInRadians = newDegree * (Math.PI / 180);
         // di chuyển
-        let deltaX = 0, deltaY = 0;
+        let deltaX = 0,
+          deltaY = 0;
         let newSpeed = tank.speed;
         // nếu có item speed thì tăng tốc
         if (tank.itemKind === 'speed') newSpeed = tank.speed * 2;
-        
+
         switch (input.direction) {
           case 'forward':
             deltaX = newSpeed * Math.sin(angleInRadians);
@@ -117,8 +119,6 @@ export class TankStateManager {
         }
       }
     }
-
-
 
     // clear inputs
     for (const playerId in tankInputBuffer) {

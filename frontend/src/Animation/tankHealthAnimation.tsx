@@ -10,7 +10,7 @@ export const tankHealthAnimation = (
   tankState: RefObject<TankState>,
   featureImages: RefObject<HTMLImageElement[]> ,
   viewerId?: string,
-  itemSoundRef?: RefObject<HTMLAudioElement>,
+  itemSoundRef?: RefObject<HTMLAudioElement | null>,
 
 ) => {
   const healthItemImg = featureImages.current ? featureImages.current[0] : null;
