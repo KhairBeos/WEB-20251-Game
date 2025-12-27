@@ -103,11 +103,16 @@ export class GameService implements OnModuleInit {
     }, 10000); // 10s
   }
 
+  addXp(playerId: string, xp: number) {
+    const tank = this.tankState.tankStates[playerId];
+    if(!tank) return;
+    tank.xp += xp;
+    console.log(`Player ${playerId} gained ${xp} XP. Total XP: ${tank.xp}`);
+  }
+
+
   addPlayer(id: string, name: string, sessionId: string) {
     // Kiểm tra session hợp lệ
-   
-
-
 
     // Khởi tạo trạng thái input
     this.tankInputBuffer[id] = [];

@@ -40,6 +40,7 @@ export function bulletVSTankCollision(
 
             if (shooter) {
               shooter.score += 10;
+              shooter.xp += 10;
             }
           }
         }

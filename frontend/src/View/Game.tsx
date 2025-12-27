@@ -139,6 +139,24 @@ function Game({ playerName }: GameProps) {
         return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+  const handler = (e: KeyboardEvent) => {
+    if (e.ctrlKey && e.key.toLowerCase() === "l") {
+      e.preventDefault();
+      if(socket == null) return;
+      if(socket.id == null) return;
+      console.log("Requesting to gain XP...");
+      socket.emit("gain_xp", {
+        playerId: socket.id,
+        xp: 20,
+      }); // CHỈ gửi intent
+    }
+  };
+
+  window.addEventListener("keydown", handler);
+  return () => window.removeEventListener("keydown", handler);
+}, [socket]);
+
   //  SOCKET LISTENERS ---
   useEffect(() => {
     if (socket && isConnected) {

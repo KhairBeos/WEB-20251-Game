@@ -31,6 +31,14 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
     this.gameService.setServer(this.server);
   }
 
+  @SubscribeMessage("gain_xp")
+handleGainXp(@MessageBody() data: { playerId: string; xp: number }) {
+  console.log(
+    `Received gain_xp for player ${data.playerId} with xp ${data.xp}`
+  );
+  this.gameService.addXp(data.playerId, data.xp);
+}
+
   // Xử lý khi Client kết nối
   handleConnection(@ConnectedSocket() client: Socket) {
     // Lấy thông tin username từ sessionStore

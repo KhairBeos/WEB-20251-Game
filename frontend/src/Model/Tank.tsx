@@ -28,6 +28,7 @@ export type TankInput = {
     rotate: 'left' | 'right' | 'none',
     clientTimestamp: number,
     isFire: boolean;
+    
 }
 
 export interface TankState {

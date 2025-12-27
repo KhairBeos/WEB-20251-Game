@@ -20,6 +20,7 @@ export interface Tank {
   itemExpire: number; // timestamp when item effect expires
   score: number;
   level: number;
+  xp: number;
 }
 
 export interface TankInput {
@@ -44,11 +45,10 @@ export function createInitialTank(id: string, name: string): Tank {
   // create random spawn point
   var x = Math.floor(Math.random() * mapWidth);
   var y = Math.floor(Math.random() * mapHeight);
-  x = Math.max(x, 200)
-  y = Math.max(y, 200)
-  x = Math.min(x, mapWidth - 200)
-  y = Math.min(y, mapHeight - 200)
-  
+  x = Math.max(x, 200);
+  y = Math.max(y, 200);
+  x = Math.min(x, mapWidth - 200);
+  y = Math.min(y, mapHeight - 200);
 
   return {
     id: id,
@@ -70,6 +70,63 @@ export function createInitialTank(id: string, name: string): Tank {
     itemKind: 'none',
     itemExpire: 0,
     shield: 0,
+    xp: 0,
   };
-
 }
+
+// next xp = old exp * 1.1
+export const levelUpScores = {
+  1: 0,
+  2: 10,
+  3: 11,
+  4: 12,
+  5: 14,
+  6: 16,
+  7: 18,
+  8: 20,
+  9: 23,
+  10: 25,
+  11: 28,
+  12: 31,
+  13: 34,
+  14: 38,
+  15: 41,
+  16: 45,
+  17: 49,
+  18: 54,
+  19: 59,
+  20: 64,
+  21: 70,
+  22: 76,
+  23: 83,
+  24: 90,
+  25: 97,
+  26: 105,
+  27: 113,
+  28: 121,
+  29: 130,
+  30: 139,
+  31: 149,
+  32: 159,
+  33: 170,
+  34: 181,
+  35: 193,
+  36: 205,
+  37: 218,
+  38: 232,
+  39: 246,
+  40: 261,
+
+  41: 276,
+  42: 292,
+  43: 309,
+  44: 326,
+  45: 344,
+  46: 362,
+  47: 381,
+  48: 401,
+  49: 421,
+  50: 442,
+  51: 464,
+  52: 486,
+};

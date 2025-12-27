@@ -124,7 +124,7 @@ export default function LoginPage() {
           </h1>
 
           <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "1rem" }}>
-            <div style={styles.skinSelector}>
+            {/* <div style={styles.skinSelector}>
               <button onClick={prevSkin} style={styles.arrowBtn}>❮</button>
 
               <div style={styles.skinPreview}>
@@ -144,7 +144,7 @@ export default function LoginPage() {
               </div>
 
               <button onClick={nextSkin} style={styles.arrowBtn}>❯</button>
-            </div>
+            </div> */}
 
             <input
               type="text"

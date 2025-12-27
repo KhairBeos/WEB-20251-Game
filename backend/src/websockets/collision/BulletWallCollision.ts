@@ -48,6 +48,7 @@ export function bulletWallCollision(
         const shooter = tankState.tankStates[bullet.ownerId];
         if (shooter) {
           shooter.score += 5;
+          shooter.xp += 5;
         }
         // console.log(`Player ${bullet.ownerId} scored 5 points for destroying a wall. Total score: ${tankState.tankStates[bullet.ownerId].score}`);
         // Phá hủy hoàn toàn: Xóa cả 4 ô (2x2)

@@ -1,12 +1,11 @@
 import { BulletInput, BulletInputBuffer } from '../model/Bullet';
-import { TankState, TankInputBuffer } from '../model/Tank';
+import { TankState, TankInputBuffer, levelUpScores } from '../model/Tank';
 
 const TANK_ROTATE_SPEED = 3;
 const BASE_SPEED = 4;
 const SHOOT_COOLDOWN = 1000;
 
 export class TankStateManager {
- 
   update(
     tankState: TankState,
     tankInputBuffer: TankInputBuffer,
@@ -23,18 +22,18 @@ export class TankStateManager {
       }
     }
 
-    // Cập nhât level dựa trên điểm số, mỗi 1 cấp độ 10 điểm
     for (const pid in tankStates) {
       const tank = tankStates[pid];
-      const newLevel = Math.min(Math.floor(tank.score / 10) + 1, 100); // max level 100
-      if (newLevel !== tank.level) {
-        const lvDiff = newLevel - tank.level;
-
-        tank.level = newLevel;
+      // Kiếm tra lên cấp max 50
+      if (tank.xp >= levelUpScores[tank.level+1] && tank.level < 50) {
+        tank.xp -= levelUpScores[tank.level+1];
+        tank.level += 1;
         // Tăng thuộc tính khi lên cấp
-        tank.maxHealth += lvDiff * 10; // max máu thêm = 100 * 10 = 1000 máu
-        tank.damage += lvDiff * 0.5 ; // damage thêm = 0.5 * 100 = 50 damage
-        tank.speed += lvDiff * 0.1; // speed thêm = 0.1 * 100 = 10 speed
+        tank.maxHealth += 10; // max máu thêm = 50 * 10 = 500 máu
+        tank.damage += 1; // damage thêm = 1 * 50 = 50 damage
+        tank.speed += 0.1; // speed thêm = 0.2 * 50 = 10 speed
+        console.log(`Tank ${pid} leveled up to level ${tank.level}!`);
+        console.log(`New stats - Health: ${tank.maxHealth}, Damage: ${tank.damage}, Speed: ${tank.speed}`);
       }
     }
 
@@ -71,7 +70,8 @@ export class TankStateManager {
         }
         const angleInRadians = newDegree * (Math.PI / 180);
         // di chuyển
-        let deltaX = 0, deltaY = 0;
+        let deltaX = 0,
+          deltaY = 0;
         let newSpeed = tank.speed;
         // nếu có item speed thì tăng tốc
         if (tank.itemKind === 'speed') newSpeed = tank.speed * 2;
@@ -117,8 +117,6 @@ export class TankStateManager {
         }
       }
     }
-
-
 
     // clear inputs
     for (const playerId in tankInputBuffer) {

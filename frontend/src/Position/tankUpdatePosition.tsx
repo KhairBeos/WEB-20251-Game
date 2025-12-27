@@ -41,6 +41,7 @@ export const tankUpdatePosistion = (
     if (keys["w"]) tankInput.direction = 'forward';
     if (keys["s"]) tankInput.direction = 'backward';
     if( keys["j"] ) tankInput.isFire = true;
+    
 
     // Handle touch input (prefer digital for D-pad to mimic keyboard)
     if (touch) {
