@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const SKINS = [
-  { id: "scarlet", name: "Scarlet", img: "/skins/scarlet.png" },
-  { id: "desert", name: "Desert", img: "/skins/desert.png" },
-  { id: "ocean", name: "Ocean", img: "/skins/ocean.png" },
-  { id: "lemon", name: "Lemon", img: "/skins/lemon.png" },
-  { id: "violet", name: "Violet", img: "/skins/violet.png" },
+  { id: "scarlet", name: "Scarlet", img: "/skins1/scarlet.png" },
+  { id: "desert", name: "Desert", img: "/skins1/desert.png" },
+  { id: "ocean", name: "Ocean", img: "/skins1/ocean.png" },
+  { id: "lemon", name: "Lemon", img: "/skins1/lemon.png" },
+  { id: "violet", name: "Violet", img: "/skins1/violet.png" },
 ];
 
 export default function LoginPage() {
