@@ -44,7 +44,7 @@ export function tankWallCollision(
           inBush = `bush_${rootR}_${rootC}`;
           continue;
         }
-       
+
         // Nếu là item pickup (101..104)
         if (val >= 101 && val <= 104) {
           if(tank.itemKind !== 'none') continue; // Đang có item rồi, không nhặt thêm
@@ -115,7 +115,7 @@ export function tankWallCollision(
             //console.log(`Distance to tile: dx=${distX.toFixed(2)}, dy=${distY.toFixed(2)}`);
 
             const distance = Math.sqrt(distX * distX + distY * distY);
-            const minDistance = R + TILE_SIZE / 2;
+          const minDistance = R + TILE_SIZE / 2;
 
             if (distance === 0) {
               tank.x += tank.radius;
@@ -123,14 +123,14 @@ export function tankWallCollision(
               continue;
             }
 
-            if (distance < minDistance) {
+          if (distance < minDistance) {
               // Va chạm xảy ra, tính toán lại vị trí của tank để tránh chồng lấn
-              const overlap = minDistance - distance;
-              const adjustX = (distX / distance) * overlap;
-              const adjustY = (distY / distance) * overlap;
-              tank.x += adjustX;
-              tank.y += adjustY;
-            }
+            const overlap = minDistance - distance;
+            const adjustX = (distX / distance) * overlap;
+            const adjustY = (distY / distance) * overlap;
+            tank.x += adjustX;
+            tank.y += adjustY;
+      }
             //console.log(`Tank at (${tank.x.toFixed(2)}, ${tank.y.toFixed(2)}) checked against tile (${col}, ${row})`);
           }
         }

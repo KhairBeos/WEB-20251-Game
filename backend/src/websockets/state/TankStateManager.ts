@@ -58,7 +58,7 @@ export class TankStateManager {
       inputs = inputs.filter((i) => Date.now() - i.clientTimestamp <= 100);
 
       let newDegree = tank.degree;
-      
+
       for (const input of inputs) {
         // xoay
         switch (input.rotate) {
@@ -75,7 +75,7 @@ export class TankStateManager {
         let newSpeed = tank.speed;
         // nếu có item speed thì tăng tốc
         if (tank.itemKind === 'speed') newSpeed = tank.speed * 2;
-        
+
         switch (input.direction) {
           case 'forward':
             deltaX = newSpeed * Math.sin(angleInRadians);

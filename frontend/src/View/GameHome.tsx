@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "../Hook/useToast";
 
 type StyleMap = { [key: string]: any };
 
@@ -20,36 +21,58 @@ export default function LoginPage() {
   const [volume, setVolume] = useState(50);
   const [skinIndex, setSkinIndex] = useState(0);
   const router = useRouter();
+  const toast = useToast();
 
   const handlePlay = async () => {
     if (!username.trim()) {
-      alert("🌱 Đừng quên nhập tên nhé chiến binh!");
+      toast?.("🌱 Đừng quên nhập tên nhé chiến binh!", "warning");
       return;
     }
     const selectedSkin = SKINS[skinIndex].id;
 
-    // Gọi Login API để lây sessionId
-    const res = await fetch('http://localhost:3001/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password }),
-    });
+    try {
+      // Gọi Login API để lây sessionId
+      const res = await fetch('http://localhost:3001/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
 
-    if (!res.ok) {
-      alert("❌ Đăng nhập thất bại! Vui lòng kiểm tra tên và mật khẩu.");
-      return;
+      if (!res.ok) {
+        let msg = "❌ Đăng nhập thất bại!";
+        if (res.status === 401) msg = "❌ Sai tài khoản hoặc mật khẩu.";
+        else if (res.status === 429) msg = "⚠️ Thử lại sau, bạn đang đăng nhập quá nhanh.";
+        else {
+          try {
+            const err = await res.json();
+            if (err?.message) msg = `❌ ${err.message}`;
+          } catch {
+            // keep default
+          }
+        }
+        toast?.(msg, "error");
+        return;
+      }
+
+      const data = await res.json();
+      const sessionId = data.sessionId;
+      if (!sessionId) {
+        toast?.("❌ Máy chủ không trả về session. Vui lòng thử lại.", "error");
+        return;
+      }
+      // Lưu sessionId vào localStorage
+      localStorage.setItem('tank_session_id', sessionId);
+
+      // chuyển trang
+      router.push(
+        `/game?username=${encodeURIComponent(username)}&skin=${selectedSkin}`
+      );
+    } catch (err) {
+      console.error('Login error', err);
+      toast?.("⚠️ Không thể kết nối máy chủ. Kiểm tra mạng hoặc thử lại sau.", "warning");
     }
-    const data = await res.json();
-    const sessionId = data.sessionId;
-    // Lưu sessionId vào localStorage
-    localStorage.setItem('tank_session_id', sessionId);
-
-    // chuyển trang
-    router.push(
-      `/game?username=${encodeURIComponent(username)}&skin=${selectedSkin}`
-    );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

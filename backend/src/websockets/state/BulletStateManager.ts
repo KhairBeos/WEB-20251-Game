@@ -23,7 +23,8 @@ export class BulletStateManager {
       // Tạo đạn
       for (const i of inputs) {
         console.log(`Creating bullet for player ${pid} with input:`, i);
-        const numBullets = Math.floor(tank.level / 5) + 1;
+        var numBullets = Math.floor(tank.level / 5) + 1; // Mỗi 5 level thêm 1 đạn
+        numBullets = Math.min(numBullets, 8); // Giới hạn tối đa 8 đạn
         
         for (let b = 0; b < numBullets; b++) {
           const spreadAngle = (b - (numBullets - 1) / 2) * 20;

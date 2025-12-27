@@ -1,7 +1,10 @@
-import { MapCell, MAP_ROWS, MAP_COLS, SPAWNPOINTS, TILE_SIZE, MapData } from '../model/MapData';
-import { Tank } from '../model/Tank';
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import { MAP_ROWS, MAP_COLS, MapData, SPAWNPOINTS, TILE_SIZE } from '../model/MapData';
 
 export class PickupService {
+  private readonly MAX_ITEMS = 50;
+
   constructor(
     private mapData: MapData,
     private server: any,
@@ -10,22 +13,17 @@ export class PickupService {
   // Spawn ngẫu nhiên 1 pickup ở ô trống, tránh mép và vùng spawn
   spawnRandomPickup(): boolean {
     const pickupTypes = [101, 102, 103, 104];
+    // Không spawn nếu đã đủ tối đa
+    if (this.mapData.itemNumber >= this.MAX_ITEMS) return false;
+
     let safety = 0;
     while (safety++ < 1000) {
       if (this.mapData.itemNumber >= 50) break; // giới hạn số lượng item trên map
       const r = Math.floor(Math.random() * MAP_ROWS);
       const c = Math.floor(Math.random() * MAP_COLS);
       if (r < 3 || r > MAP_ROWS - 4 || c < 3 || c > MAP_COLS - 4) continue;
-      // // tránh quanh spawnpoints
-      // let nearSpawn = false;
-      // for (const sp of SPAWNPOINTS) {
-      //   if (Math.abs(sp.r - r) <= 4 && Math.abs(sp.c - c) <= 4) {
-      //     nearSpawn = true;
-      //     break;
-      //   }
-      // }
-      // if (nearSpawn) continue;
       if (this.mapData.map[r][c].val !== 0) continue;
+
       const type = pickupTypes[Math.floor(Math.random() * pickupTypes.length)];
       this.mapData.map[r][c] = { root_r: -1, root_c: -1, val: type };
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access

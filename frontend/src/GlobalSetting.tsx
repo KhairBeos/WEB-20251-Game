@@ -5,6 +5,12 @@ export const TANK_ROTATE_SPEED = 3;
 export const CANVAS_WIDTH = typeof window !== 'undefined' ? window.innerWidth : 1920;
 export const CANVAS_HEIGHT = typeof window !== 'undefined' ? window.innerHeight : 1080;
 
+export const MAX_CANVAS_WIDTH = 1920;
+export const MAX_CANVAS_HEIGHT = 1080;
+
+export const VISIBLE_COLS = Math.floor(30*1.2); // how many map columns to aim to display
+export const VISIBLE_ROWS = Math.floor(18*1.2); // how many map rows to aim to display
+
 export const ANIMATION_SPEED = 10; 
 export const COOLDOWN_MS = 1000;
 

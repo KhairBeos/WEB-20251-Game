@@ -36,11 +36,11 @@ export function bulletVSTankCollision(
         if (dmg > 0) {
           t.health -= dmg;
           if (t.health <= 0) {
-             const shooter = tankStates[bullet.ownerId];
-             
-             if (shooter) {
-                 shooter.score += 10;
-             }
+            const shooter = tankStates[bullet.ownerId];
+
+            if (shooter) {
+              shooter.score += 10;
+            }
           }
         }
         server.emit('hitTank', tank.id);

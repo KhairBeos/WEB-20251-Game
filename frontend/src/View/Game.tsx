@@ -6,9 +6,8 @@ import { tankBulletAnimation } from "../Animation/tankBulletAnimation";
 import { tankGunAnimation } from "../Animation/tankGunAnimation";
 import { tankHealthAnimation } from "../Animation/tankHealthAnimation";
 import { tankMovingAnimation } from "../Animation/tankMovingAnimation";
-import { CANVAS_HEIGHT, CANVAS_WIDTH, DEBUG_MODE, MAX_DPR, TILE_SIZE } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
-import { useGameInput } from "../Hook/useGameInput";
-import useLoadBush from "../Hook/useLoadBush";
+import { CANVAS_HEIGHT, CANVAS_WIDTH, DEBUG_MODE, MAX_CANVAS_HEIGHT, MAX_CANVAS_WIDTH, MAX_DPR, TILE_SIZE, VISIBLE_COLS, VISIBLE_ROWS } from "../GlobalSetting"; // Chỉ lấy TILE_SIZE, kích thước màn hình sẽ tự tính
+import { useGameInput } from "../Hook/useGameInput";import { useTouchInput } from "../Hook/useTouchInput";import useLoadBush from "../Hook/useLoadBush";
 import useLoadGround from "../Hook/useLoadGround";
 import useLoadTankBody from "../Hook/useLoadTankBody";
 import useLoadTankBullet from "../Hook/useLoadTankBullet";
@@ -23,8 +22,7 @@ import { TankAnimationState, TankState } from "../Model/Tank";
 import { TankGunAnimationState } from "../Model/TankGun";
 import { tankUpdatePosistion } from "../Position/tankUpdatePosition";
 import Scoreboard from "./Scoreboard";
-
-// --- BẬT DEBUG MODE: True để hiện khung va chạm ---
+import MobileDPad from "../Component/MobileDPad";
 import useLoadMapIcons from "../Hook/useLoadMapIcons";
 import useLoadItem from "../Hook/useLoadTankFeatures";
 import { SoundState } from "../Model/Sound";
@@ -42,8 +40,6 @@ function Game({ playerName }: GameProps) {
   const bulletStateRef = useRef<BulletState>({ serverTimestamp: 0, bulletStates: {} });
   const dynamicMap= useRef<MapCell[][]>([]);
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
-
-  const lastCamPos = useRef({ x: 0, y: 0 });
   
   // --- STATE MÀN HÌNH (VIEWPORT) ---
   const viewport = useRef({ w: 1200, h: 800 });
@@ -52,6 +48,8 @@ function Game({ playerName }: GameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameId = useRef<number>(null);
   const dprRef = useRef<number>(1);
+  const cssViewportRef = useRef<{ w: number; h: number }>({ w: CANVAS_WIDTH, h: CANVAS_HEIGHT });
+  const [isPortrait, setIsPortrait] = useState(false);
 
   // //  LOAD ASSET ---
   const {imageRef:tankBodyImageRef,isImageLoaded} = useLoadTankBody()
@@ -65,20 +63,34 @@ function Game({ playerName }: GameProps) {
   const {imageRef:itemRef,isImageLoaded:isItemImageLoaded} = useLoadItem()
   const {images:mapIcons,isImageLoaded:isMapIconsLoaded} = useLoadMapIcons()
 
-  // LOAD SOUND
-  const fireSoundRef = useRef<HTMLAudioElement>(new Audio('/sound/FireSound.mp3'));
-  const hitSoundRef = useRef<HTMLAudioElement>(new Audio('/sound/onHitSound.mp3'));
-  const itemSoundRef = useRef<HTMLAudioElement>(new Audio('/sound/ItemSound.mp3'));
-  const backgroundMusicRef = useRef<HTMLAudioElement>(new Audio('/sound/backGroundSound.mp3'));
+  // LOAD SOUND (khởi tạo trong browser để tránh SSR ReferenceError)
+  const fireSoundRef = useRef<HTMLAudioElement | null>(null);
+  const hitSoundRef = useRef<HTMLAudioElement | null>(null);
+  const itemSoundRef = useRef<HTMLAudioElement | null>(null);
+  const backgroundMusicRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (typeof Audio === 'undefined') return;
+    fireSoundRef.current = new Audio('/sound/FireSound.mp3');
+    hitSoundRef.current = new Audio('/sound/onHitSound.mp3');
+    itemSoundRef.current = new Audio('/sound/ItemSound.mp3');
+    backgroundMusicRef.current = new Audio('/sound/backGroundSound.mp3');
+  }, []);
 
   // --- TẠO CÁC REF LƯU TRẠNG THÁI ---
   // Ref để theo dõi trạng thái tank từ server
   
   const mapAssetsRef = useRef<any>({});
+  const staticCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const needsStaticRedrawRef = useRef<boolean>(true);
 
   const bulletsRef = useRef<Bullet[]>([]);
   // Ref để theo dõi trạng thái các phím W A S D đang được nhấn
-  const keysPressed = useGameInput()
+  const keysPressed = useGameInput();
+  const touchInput = useTouchInput();
+
+  // --- Tank position interpolation (smooth movement between server updates) ---
+  const tankPosInterpolationRef = useRef<{ [playerId: string]: { lastX: number; lastY: number; lastUpdateTime: number } }>({});
 
   //  TAO ANIMATION STATE DE RENDER ANIMATION ---
   // Ref để lưu trữ trạng thái hoạt ảnh di chuyen của tank
@@ -93,10 +105,14 @@ function Game({ playerName }: GameProps) {
   //  XỬ LÝ RESIZE MÀN HÌNH ---
   useEffect(() => {
       const handleResize = () => {
-          // Cập nhật kích thước viewport theo cửa sổ trình duyệt (không ép bội số/cố định)
-          const wCss = window.innerWidth;
-          const hCss = window.innerHeight;
+          // Cập nhật kích thước viewport theo cửa sổ trình duyệt (prioritize visualViewport on mobile)
+          const vv = (window as any).visualViewport;
+          var wCss = vv && typeof vv.width === 'number' ? vv.width : window.innerWidth;
+          var hCss = vv && typeof vv.height === 'number' ? vv.height : window.innerHeight;
+
           viewport.current = { w: wCss, h: hCss };
+          // store CSS-pixel viewport separately so animate() can use the exact CSS size
+          cssViewportRef.current = { w: wCss, h: hCss };
           dprRef.current = Math.max(1, Math.min(window.devicePixelRatio || 1, MAX_DPR));
           const canvas = canvasRef.current;
           if (canvas) {
@@ -108,41 +124,25 @@ function Game({ playerName }: GameProps) {
             canvas.height = Math.ceil(hCss * dprRef.current);
           }
       };
-      handleResize(); // Gọi ngay lần đầu để khớp 100vw/100vh
-      // window.addEventListener('resize', handleResize);
-      return () => window.removeEventListener('resize', handleResize);
+        handleResize(); // Gọi ngay lần đầu để khớp 100vw/100vh
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+        // portrait detection for mobile: block play when portrait to avoid unfair vision
+        const checkPortrait = () => {
+          const w = window.innerWidth;
+          const h = window.innerHeight;
+          setIsPortrait(h > w && w < 900); // treat narrow widths as mobile portrait
+        };
+        checkPortrait();
+        window.addEventListener('resize', checkPortrait);
+        window.addEventListener('orientationchange', checkPortrait);
+        return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Chặn Ctrl+wheel (zoom) và pinch gesture
-  useEffect(() => {
-    const onWheel = (e: WheelEvent) => {
-      if (e.ctrlKey) {
-        e.preventDefault();
-      }
-    };
-    const onGesture = (e: Event) => {
-      e.preventDefault();
-    };
-    window.addEventListener('wheel', onWheel, { passive: false });
-    // Safari iOS gesture events
-    window.addEventListener('gesturestart', onGesture as EventListener, { passive: false });
-    window.addEventListener('gesturechange', onGesture as EventListener, { passive: false });
-    window.addEventListener('gestureend', onGesture as EventListener, { passive: false });
-    return () => {
-      window.removeEventListener('wheel', onWheel as EventListener);
-      window.removeEventListener('gesturestart', onGesture as EventListener);
-      window.removeEventListener('gesturechange', onGesture as EventListener);
-      window.removeEventListener('gestureend', onGesture as EventListener);
-    };
-  }, []);
   //  SOCKET LISTENERS ---
   useEffect(() => {
     if (socket && isConnected) {
-      // Prefer combined state packet; keep legacy listeners for compatibility
-      // socket.on('state', (payload: { tankState: any; bulletState: any }) => {
-      //   if (payload?.tankState) tankStateRef.current = payload.tankState;
-      //   if (payload?.bulletState) bulletStateRef.current = payload.bulletState;
-      // });
+      
       socket.on('tankState', (s) => tankStateRef.current = s);
       socket.on('bulletState', (s) => bulletStateRef.current = s);
       socket.on('fireBullet', (playerId) => {
@@ -152,7 +152,7 @@ function Game({ playerName }: GameProps) {
         tankAnimationState.current[playerId].onHit.isOnHit = true;
       });
       // Nhận Map ban đầu
-      socket.on('mapData', ({ map }) => dynamicMap.current = map);
+      socket.on('mapData', ({ map }) => { dynamicMap.current = map; needsStaticRedrawRef.current = true; });
       
       // Nhận cập nhật Map (khi tường vỡ)
       socket.on('mapUpdate', ({ r, c, cell }) => {
@@ -161,6 +161,7 @@ function Game({ playerName }: GameProps) {
           }
         console.log("Map update received:", r, c, cell);
           dynamicMap.current[r][c] = cell;
+          needsStaticRedrawRef.current = true;
       });
 
       socket.on('gameOver', (playerId) => {
@@ -188,6 +189,7 @@ function Game({ playerName }: GameProps) {
       };
     }
   }, [socket, isConnected, playerName, router]);
+
 
   useEffect(() => {
       const interval = setInterval(() => {
@@ -232,7 +234,9 @@ function Game({ playerName }: GameProps) {
     keysPressed: RefObject<KeyMap>,
     tankGunAnimationState: RefObject<TankGunAnimationState>,
     socket: any,
-  ) => tankUpdatePosistion(keysPressed,tankGunAnimationState,socket),[])
+    touchInput?: any,
+    tankState?: any,
+  ) => tankUpdatePosistion(keysPressed, tankGunAnimationState, socket, touchInput, tankState), [])
 
   // draw map 
   const drawMapCB = useCallback((
@@ -245,11 +249,12 @@ function Game({ playerName }: GameProps) {
     towerImg: RefObject<HTMLImageElement[]>,
     bushImg: RefObject<HTMLImageElement[]>,
     icons: typeof mapIcons,
-    ctx: CanvasRenderingContext2D
+    ctx: CanvasRenderingContext2D,
+    worldScale: number,
   ) => {
-    
-    drawMap(camX,camY,dynamicMap,viewPort,groundImg,treeImg,towerImg,bushImg,icons,ctx)
+    drawMap(camX,camY,dynamicMap,viewPort,groundImg,treeImg,towerImg,bushImg,icons,ctx, worldScale);
   },[isGroundImageLoaded,isTreeImageLoaded,isTowerImageLoaded,isBushImageLoaded,isMapIconsLoaded, socket?.id])
+
 
   const tankHealthAnimationCB = useCallback((
     ctx: CanvasRenderingContext2D,
@@ -332,42 +337,56 @@ function Game({ playerName }: GameProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Thiết lập scale theo devicePixelRatio để hình ảnh sắc nét trên màn hình DPI cao
-    ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
-
-    // Xóa màn hình theo kích thước viewport
-    ctx.fillStyle = "#2d3436"; 
-    ctx.fillRect(0, 0, viewport.current.w, viewport.current.h);
+    // --- DPI + world scaling ---
+    // We keep high-DPI buffer and optionally scale the world so that
+    // small screens 'zoom out' to show similar world area.
+    // Desired visible area expressed as number of tiles (keeps world-units consistent)
+  
+    const DESIGN_VIEW_W = VISIBLE_COLS * TILE_SIZE; // target virtual viewport width (world units)
+    const DESIGN_VIEW_H = VISIBLE_ROWS * TILE_SIZE;  // target virtual viewport height
+    // console.log(`Design view size: ${DESIGN_VIEW_W}x${DESIGN_VIEW_H}`);
+    // Base device pixel ratio transform
+    const baseDpr = dprRef.current;
+    // Raw CSS-pixel viewport (before world scaling). Prefer the CSS viewport saved on resize
+    const rawViewW = cssViewportRef.current.w;
+    const rawViewH = cssViewportRef.current.h;
+    // console.log(`Viewport CSS size: ${rawViewW}x${rawViewH}, canvas size: ${canvas.width}x${canvas.height}, DPR: ${baseDpr}`);
+    
+    var worldScale = 1;
+    // Nếu Màn hình nhỏ hơn kích thước thiết kế, scale thế giới xuống để vừa khít
+    worldScale = Math.max(rawViewH / DESIGN_VIEW_H, rawViewW / DESIGN_VIEW_W);
+    // Nếu Màn hình lớn hơn kích thước thiết kế, scale thế giới lên để không bị khoảng trống
+    worldScale =  Math.max(rawViewH / DESIGN_VIEW_H, rawViewW / DESIGN_VIEW_W);
+    // console.log(`World scale: ${worldScale}`);
+    
+    ctx.setTransform(baseDpr, 0, 0, baseDpr, 0, 0);
     
     const myTank = socket?.id ? tankStateRef.current.tankStates[socket.id] : null;
+    if(!myTank) {
+      animationFrameId.current = requestAnimationFrame(animate); 
+      return;
+    }
     
-    // --- LOGIC CAMERA CLAMP (GIỚI HẠN GÓC) ---
-    let camX = 0, camY = 0;
-    
-    // Kích thước thật của Map (80 ô * 40px = 3200px)
     const MAP_REAL_W = MAP_COLS * TILE_SIZE;
     const MAP_REAL_H = MAP_ROWS * TILE_SIZE;
+    
+    // Tính toán vị trí camera để giữ tank ở giữa màn hình
+    let camX = myTank.x - viewport.current.w / 2 / worldScale;
+    let camY = myTank.y - viewport.current.h / 2 / worldScale;
+    // console.log('tank pos:', myTank.x, myTank.y);
+    // console.log('cam pos before clamp:', camX, camY);
 
-    if (myTank) { 
-        // 1. Tính vị trí muốn camera đến (Tank ở giữa)
-        camX = myTank.x - viewport.current.w / 2;
-        camY = myTank.y - viewport.current.h / 2; 
-        // console.log("Cam target:", camX, camY);
-
-        // 2. Giới hạn Camera không đi ra ngoài biên map
-        camX = Math.max(0, Math.min(camX, MAP_REAL_W - viewport.current.w));
-        camY = Math.max(0, Math.min(camY, MAP_REAL_H - viewport.current.h));
-
-        // console.log("Cam clamped:", camX, camY);
-      
-    }    // --- VẼ THẾ GIỚI TRONG KHU VỰC VIEWPORT 100% ---
+    // Giới hạn camera trong biên map
+    camX = Math.max(0, Math.min(MAP_REAL_W - viewport.current.w / worldScale, camX));
+    camY = Math.max(0, Math.min(MAP_REAL_H - viewport.current.h / worldScale, camY));
+    // console.log('cam pos after clamp:', camX, camY);
+    
+    ctx.scale(worldScale, worldScale);
     ctx.save();
-    ctx.translate(-camX, -camY); // Dịch chuyển thế giới
+    ctx.translate(-camX , -camY ); // Dịch chuyển thế giới
 
-    // console.log("Drawing frame at cam:", camX, camY);
-    // console.log("My tank position:", myTank?.x, myTank?.y);
-    drawMapCB(camX, camY, viewport, dynamicMap, groundImageRef, treeImageRef, towerRef, bushImageRef, mapIcons, ctx);
-    tankUpdatePosistion(keysPressed, tankGunAnimationState, socket); // Cập nhật vị trí tank dựa trên phím nhấn và gửi lên server
+    drawMapCB(camX, camY, viewport, dynamicMap, groundImageRef, treeImageRef, towerRef, bushImageRef, mapIcons, ctx, worldScale); // Vẽ map
+    tankUpdatePosistion(keysPressed, tankGunAnimationState, socket, touchInput, tankStateRef); // Cập nhật vị trí tank dựa trên phím/touch và gửi lên server
     tankMovingAnimationCB(ctx, tankStateRef, tankAnimationState, keysPressed, tankBodyImageRef);
     tankGunAnimationCB(ctx, tankStateRef, tankGunAnimationState, keysPressed, tankGunImageRef);
     tankBulletAnimationCB(ctx, bulletStateRef, bulletAnimationState, bulletImageRef);
@@ -424,12 +443,24 @@ function Game({ playerName }: GameProps) {
         </div>
     )}
     
+    {/* Portrait overlay: block play on tall/narrow screens */}
+    {isPortrait && (
+      <div className="absolute inset-0 z-60 flex flex-col items-center justify-center bg-black/90 text-white p-6">
+        <div className="text-2xl font-bold mb-4">Vui lòng xoay điện thoại sang ngang</div>
+        <div className="text-sm opacity-80 mb-6">Game yêu cầu chế độ ngang để công bằng về tầm nhìn.</div>
+        <div className="w-28 h-28 rounded-full border-4 border-white/30 flex items-center justify-center">
+          <div className="transform rotate-90 text-3xl">↺</div>
+        </div>
+      </div>
+    )}
+
     <canvas
       ref={canvasRef}
       width={CANVAS_WIDTH}
       height={CANVAS_HEIGHT}
-      className="border-4 border-purple-500 rounded-lg bg-gray-50"
+      className="block"
     />
+    <MobileDPad touchInput={touchInput} />
   </div>
   );
 }

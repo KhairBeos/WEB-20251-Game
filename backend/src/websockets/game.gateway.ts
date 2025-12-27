@@ -1,4 +1,5 @@
-// src/game/game.gateway.ts
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   WebSocketGateway,
   SubscribeMessage,
@@ -12,7 +13,6 @@ import { Socket, Server } from 'socket.io';
 import * as gameService from './game.service';
 import { Logger, OnModuleInit } from '@nestjs/common';
 import type { TankInput } from './model/Tank';
-import type { BulletInput } from './model/Bullet';
 import { sessionStore } from 'src/auth/session.store';
 
 @WebSocketGateway({
@@ -44,15 +44,20 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect, On
       return;
     }
 
+    // Nêu session đang được sử dụng, từ chối kết nối
+    if (sessionVal.using) {
+      this.logger.warn(`Session already in use for client: ${client.id}`);
+      client.disconnect();
+      return;
+    }
+    sessionVal.using = true;
+    sessionStore.set(sessionId, sessionVal);
+
     const username = sessionVal.username;
 
-    this.logger.log(
-      `Client connected: ${client.id} (User: ${username}, Session: ${sessionId})`
-    );
-
+    this.logger.log(`Client connected: ${client.id} (User: ${username}, Session: ${sessionId})`);
     this.gameService.addPlayer(client.id, username, sessionId);
   }
-
 
   // Xử lý khi Client ngắt kết nối
   handleDisconnect(@ConnectedSocket() client: Socket) {

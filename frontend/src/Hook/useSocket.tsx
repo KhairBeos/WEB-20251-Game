@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { SOCKET_URL } from '../GlobalSetting';
+import { useToast } from './useToast';
 
 const generateSessionId = () => {
   return 'sess_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
@@ -11,6 +12,7 @@ export const useSocket = () => {
   // useRef được sử dụng để giữ instance socket giữa các lần render
   const socketRef = useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     // Nếu socket đã tồn tại, không cần tạo lại
@@ -23,7 +25,7 @@ export const useSocket = () => {
       let sessionId = localStorage.getItem('tank_session_id');
       // Nếu chưa có yêu cầu quay lại đăng nhập để tạo mới
       if (!sessionId) {
-        alert('Session expired or not found. Please log in again.');
+        toast?.('⏳ Phiên đã hết hạn. Vui lòng đăng nhập lại.', 'warning');
         window.location.href = '/';
         return;
       }
@@ -45,9 +47,15 @@ export const useSocket = () => {
         setIsConnected(true);
       });
 
-      socket.on('disconnect', () => {
-        console.log('Socket client disconnected.');
-        alert('Session expired or not found. Please log in again.');
+      socket.on('connect_error', (err) => {
+        console.error('Socket connect error:', err);
+        toast?.('⚠️ Không thể kết nối máy chủ. Vui lòng kiểm tra mạng hoặc đăng nhập lại.', 'warning');
+        window.location.href = '/';
+      });
+
+      socket.on('disconnect', (reason) => {
+        console.log('Socket client disconnected.', reason);
+        toast?.('⏳ Phiên đã hết hạn hoặc kết nối bị mất. Vui lòng đăng nhập lại.', 'warning');
         window.location.href = '/';
         setIsConnected(false);
       });

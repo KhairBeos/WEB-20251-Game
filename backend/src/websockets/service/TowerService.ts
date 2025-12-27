@@ -12,7 +12,7 @@ export class TowerService {
     if (Math.random() < 0.1) {
       const pickupTypes = [101, 102, 103, 104];
       const type = pickupTypes[Math.floor(Math.random() * pickupTypes.length)];
-      // cố gắng đặt pickup vào một trong 4 ô của 2x2
+      // đặt pickup vào một trong 4 ô của 2x2
       const cells = [
         { r: rootR, c: rootC },
         { r: rootR, c: rootC + 1 },
@@ -28,7 +28,6 @@ export class TowerService {
           this.map[pos.r][pos.c].val === 0
         ) {
           this.map[pos.r][pos.c] = { root_r: -1, root_c: -1, val: type };
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
           this.server.emit('mapUpdate', {
             r: pos.r,
             c: pos.c,
@@ -56,25 +55,25 @@ export class TowerService {
         this.map[rootR][rootC + 1] = { root_r: rootR, root_c: rootC, val: 99 };
         this.map[rootR + 1][rootC] = { root_r: rootR, root_c: rootC, val: 99 };
         this.map[rootR + 1][rootC + 1] = { root_r: rootR, root_c: rootC, val: 99 };
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+
         this.server.emit('mapUpdate', {
           r: rootR,
           c: rootC,
           cell: this.map[rootR][rootC],
         });
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+
         this.server.emit('mapUpdate', {
           r: rootR,
           c: rootC + 1,
           cell: this.map[rootR][rootC + 1],
         });
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+
         this.server.emit('mapUpdate', {
           r: rootR + 1,
           c: rootC,
           cell: this.map[rootR + 1][rootC],
         });
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
+
         this.server.emit('mapUpdate', {
           r: rootR + 1,
           c: rootC + 1,

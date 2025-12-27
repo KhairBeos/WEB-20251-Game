@@ -26,7 +26,7 @@ export type MapData = {
   itemNumber: number;
   towerNumber: number;
   bushNumber: number;
-}
+};
 
 // 3. Spawn Point
 export const SPAWNPOINTS = [
@@ -37,9 +37,9 @@ export const SPAWNPOINTS = [
 ];
 
 export const generateMap = (): MapData => {
-  var itemNumber = 0;
-  var towerNumber = 0;
-  var bushNumber = 0;
+  let itemNumber = 0;
+  let towerNumber = 0;
+  let bushNumber = 0;
 
   // Tạo ma trận map ban đầu
   const map: MapCell[][] = [];
@@ -107,7 +107,7 @@ export const generateMap = (): MapData => {
   for (let r = 4; r < MAP_ROWS - 4; r += 2) {
     for (let c = 4; c < MAP_COLS - 4; c += 2) {
       if (Math.random() < 0.2) {
-        if(placeObject(r, c, 4)) towerNumber++;
+        if (placeObject(r, c, 4)) towerNumber++;
       } else if (Math.random() < 0.05) {
         // Đặt Bush bên trong: chọn ngẫu nhiên 1 trong 4 biến thể 11..14
         const variant = 11 + Math.floor(Math.random() * 4);

@@ -1,10 +1,29 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { MapCell, MAP_ROWS, MAP_COLS } from '../model/MapData';
 
 export class BushService {
+  private readonly MAX_BUSHES = 50;
+
   constructor(
     private map: MapCell[][],
     private server: any,
   ) {}
+
+  // Đếm số bụi gốc hiện tại trên map
+  private countBushes(): number {
+    let count = 0;
+    const visited = new Set<string>();
+    for (let r = 0; r < MAP_ROWS; r++) {
+      for (let c = 0; c < MAP_COLS; c++) {
+        const cell = this.map[r][c];
+        if (cell.val >= 11 && cell.val <= 14 && cell.root_r === r && cell.root_c === c) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
 
   // Di chuyển lại N bụi (3x2) sang vị trí trống trong map
   relocateBushes(count: number) {
@@ -12,14 +31,16 @@ export class BushService {
     for (let r = 0; r < MAP_ROWS; r++) {
       for (let c = 0; c < MAP_COLS; c++) {
         const cell = this.map[r][c];
-        if (cell.val >= 11 && cell.val <= 14) {
+        if (cell.val >= 11 && cell.val <= 14 && cell.root_r === r && cell.root_c === c) {
           candidates.push({ r, c });
         }
       }
     }
     if (candidates.length === 0) return;
 
-    for (let i = 0; i < count; i++) {
+    const actualCount = Math.min(count, candidates.length);
+
+    for (let i = 0; i < actualCount; i++) {
       const idx = Math.floor(Math.random() * candidates.length);
       const { r, c } = candidates[idx];
       const root = this.map[r][c];
@@ -31,7 +52,6 @@ export class BushService {
           const cc = c + dc;
           if (rr < MAP_ROWS && cc < MAP_COLS) {
             this.map[rr][cc] = { root_r: -1, root_c: -1, val: 0 };
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
             this.server?.emit('mapUpdate', { r: rr, c: cc, cell: this.map[rr][cc] });
           }
         }
@@ -64,7 +84,6 @@ export class BushService {
         }
         for (let dr = 0; dr < 2; dr++) {
           for (let dc = 0; dc < 3; dc++) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access
             this.server?.emit('mapUpdate', {
               r: nr + dr,
               c: nc + dc,
@@ -74,6 +93,7 @@ export class BushService {
         }
         placed = true;
       }
+      candidates.splice(idx, 1);
     }
   }
 }

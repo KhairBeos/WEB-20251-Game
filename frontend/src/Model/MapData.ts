@@ -6,7 +6,7 @@
 // 9: Trụ Spawn
 // 99: VẬT CẢN TÀNG HÌNH (Phần thân của Tower/Tree - Không vẽ, chỉ chặn đường)
 
-export const MAP_ROWS = 80; // 80 ô * 40px = 3200px
+export const MAP_ROWS = 80;
 export const MAP_COLS = 80;
 
 export const TILE_SIZE = 40; // Kích thước mỗi ô là 40x40px

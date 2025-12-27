@@ -14,7 +14,8 @@ const drawMap = (
     towerImg: RefObject<HTMLImageElement[]>,
     bushImg: RefObject<HTMLImageElement[]>,
     icons: RefObject<Record<string, HTMLImageElement>> | undefined,
-        ctx: CanvasRenderingContext2D,
+    ctx: CanvasRenderingContext2D,
+    worldScale: number,
     ) => {
    
     if (dynamicMap.current.length === 0) return;
@@ -35,12 +36,19 @@ const drawMap = (
    
     const TILE = TILE_SIZE; // Base unit (use canonical value)
 
+    // Clear the visible area first
+    ctx.clearRect(camX, camY, viewport.current.w, viewport.current.h);
+
+    const realViewportW = viewport.current.w / worldScale;
+    const realViewportH = viewport.current.h / worldScale;
+
+
     // Tính toán ô bắt đầu và kết thúc dựa trên vị trí camera và kích thước viewport
     var startCol = Math.floor(camX / TILE);
     // Trừ 1px trước khi chia TILE để tránh mất cột/ hàng biên khi đúng ranh giới
-    var endCol = Math.min(MAP_COLS - 1, Math.floor((camX + viewport.current.w - 1) / TILE));
+    var endCol = Math.min(MAP_COLS - 1, Math.floor((camX + realViewportW - 1) / TILE));
     var startRow = Math.floor(camY / TILE);
-    var endRow =  Math.min(MAP_ROWS - 1, Math.floor((camY + viewport.current.h - 1) / TILE));
+    var endRow =  Math.min(MAP_ROWS - 1, Math.floor((camY + realViewportH - 1) / TILE));
     // Thêm 2 ô đệm để tránh khoảng trống khi di chuyển
     
     startCol = Math.max(0, startCol - 2);

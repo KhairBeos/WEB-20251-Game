@@ -1,4 +1,4 @@
-import { MAP_COLS, MAP_ROWS, TILE_SIZE } from "./MapData";
+import { MAP_COLS, MAP_ROWS, TILE_SIZE, SPAWNPOINTS, MapCell } from './MapData';
 
 export interface Tank {
   name: string;
@@ -49,7 +49,7 @@ export function createInitialTank(id: string, name: string): Tank {
   x = Math.min(x, mapWidth - 200)
   y = Math.min(y, mapHeight - 200)
   
-  
+
   return {
     id: id,
     name: name,

@@ -10,7 +10,7 @@ export const tankMovingAnimation = (
   keysPressed: RefObject<KeyMap>,
   frames: RefObject<HTMLImageElement[]>,
   viewerId?: string,
-  hitSoundRef?: RefObject<HTMLAudioElement>,
+  hitSoundRef?: RefObject<HTMLAudioElement | null>,
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
