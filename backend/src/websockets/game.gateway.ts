@@ -77,7 +77,7 @@ handleGainXp(@MessageBody() data: { playerId: string; xp: number }) {
   // Dữ liệu client gửi lên: socket.emit('playerInput', { direction: 'right' });
   @SubscribeMessage('tankInput')
   handleMove(@MessageBody() tankInput: TankInput, @ConnectedSocket() client: Socket): void {
-    console.log("🔥 TANK INPUT RECEIVED", client.id, tankInput);
+    // console.log("🔥 TANK INPUT RECEIVED", client.id, tankInput);
     this.gameService.handleTankInput(client.id, tankInput);
   }
 }

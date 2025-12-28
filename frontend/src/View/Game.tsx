@@ -31,8 +31,6 @@ interface GameProps {
   playerName: string;
 }
 
-
-
 function Game({ playerName }: GameProps) {
   const router = useRouter();
 
@@ -284,6 +282,8 @@ function Game({ playerName }: GameProps) {
   ) => tankHealthAnimation(ctx,tankState, itemImages, socket?.id, itemSoundRef),[isItemImageLoaded])
 
 
+ 
+
   // --- 3. LOAD ASSETS ---
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
@@ -348,6 +348,9 @@ function Game({ playerName }: GameProps) {
 }
 
 
+  const lastSendRef = useRef(0);
+  const SEND_INTERVAL = 10; // 20Hz
+
   // --- 5. GAME LOOP (ANIMATE) ---
   const animate = useCallback(() => {
     const canvas = canvasRef.current;
@@ -407,13 +410,18 @@ function Game({ playerName }: GameProps) {
     ctx.translate(-camX , -camY ); // Dịch chuyển thế giới
 
     drawMapCB(camX, camY, viewport, dynamicMap, groundImageRef, treeImageRef, towerRef, bushImageRef, mapIcons, ctx, worldScale); // Vẽ map
-    tankUpdatePosistion(keysPressed, tankGunAnimationState, socket, touchInput, tankStateRef); // Cập nhật vị trí tank dựa trên phím/touch và gửi lên server
     tankMovingAnimationCB(ctx, tankStateRef, tankAnimationState, keysPressed, tankBodyImageRef);
     tankGunAnimationCB(ctx, tankStateRef, tankGunAnimationState, keysPressed, tankGunImageRef);
     tankBulletAnimationCB(ctx, bulletStateRef, bulletAnimationState, bulletImageRef);
     tankHealthAnimationCB(ctx, tankStateRef, itemRef);
     gameSound()
-
+    
+    const time = Date.now();
+    if (time - lastSendRef.current >= SEND_INTERVAL) {
+      tankUpdatePosistion(keysPressed, tankGunAnimationState, socket, touchInput, tankStateRef); // Cập nhật vị trí tank dựa trên phím/touch và gửi lên server
+      lastSendRef.current = time;
+  }
+    
     ctx.restore();
 
     // UI Debug (Vẽ đè lên trên cùng)
