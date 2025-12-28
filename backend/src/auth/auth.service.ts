@@ -5,7 +5,7 @@ import { sessionStore } from "./session.store";
 
 @Injectable()
 export class AuthService {
-  login(username: string, password: string) {
+  login(username: string, password: string, skin: string) {
     // DEMO: password cố định
     if (password !== "Tankgame20251") {
       throw new UnauthorizedException("Invalid credentials");
@@ -17,11 +17,13 @@ export class AuthService {
       username,
       createdAt: Date.now(),
       socketId: undefined,
+      skin,
     });
 
     return {
       sessionId,
       username,
+      skin,
     };
   }
 

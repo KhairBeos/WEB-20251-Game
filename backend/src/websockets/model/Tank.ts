@@ -21,6 +21,7 @@ export interface Tank {
   score: number;
   level: number;
   xp: number;
+  skin: string;
 }
 
 export interface TankInput {
@@ -38,7 +39,7 @@ export interface TankInputBuffer {
   [playerId: string]: TankInput[];
 }
 
-export function createInitialTank(id: string, name: string): Tank {
+export function createInitialTank(id: string, name: string, skin: string): Tank {
   const mapWidth = MAP_COLS * TILE_SIZE;
   const mapHeight = MAP_ROWS * TILE_SIZE;
 
@@ -71,6 +72,7 @@ export function createInitialTank(id: string, name: string): Tank {
     itemExpire: 0,
     shield: 0,
     xp: 0,
+    skin: skin,
   };
 }
 
@@ -116,7 +118,6 @@ export const levelUpScores = {
   38: 232,
   39: 246,
   40: 261,
-
   41: 276,
   42: 292,
   43: 309,

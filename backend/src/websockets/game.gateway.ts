@@ -62,9 +62,10 @@ handleGainXp(@MessageBody() data: { playerId: string; xp: number }) {
     sessionStore.set(sessionId, sessionVal);
 
     const username = sessionVal.username;
+    const skin = sessionVal.skin;
 
-    this.logger.log(`Client connected: ${client.id} (User: ${username}, Session: ${sessionId})`);
-    this.gameService.addPlayer(client.id, username, sessionId);
+    this.logger.log(`Client connected: ${client.id} (User: ${username}, Session: ${sessionId}), Skin : ${skin}` );
+    this.gameService.addPlayer(client.id, username, sessionId, skin);
   }
 
   // Xử lý khi Client ngắt kết nối

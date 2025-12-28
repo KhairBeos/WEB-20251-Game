@@ -20,6 +20,8 @@ export type Tank = {
 
     score: number,
     level: number,
+    skin: string;
+    xp: number;
 
 }
 

@@ -55,7 +55,7 @@ export const tankUpdatePosistion = (
 
       if (touch.isFiring) tankInput.isFire = true, ok = true;
     }
-
+    
     // Gửi trạng thái đầu vào của người chơi lên server
     if(socket && ok) {
       console.log("Sending tank input:", tankInput);

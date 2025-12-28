@@ -106,14 +106,14 @@ export class GameService implements OnModuleInit {
   }
 
 
-  addPlayer(id: string, name: string, sessionId: string) {
+  addPlayer(id: string, name: string, sessionId: string, skin: string) {
     // Kiểm tra session hợp lệ
 
     // Khởi tạo trạng thái input
     this.tankInputBuffer[id] = [];
     this.bulletInputBuffer[id] = [];
 
-    const newTank = createInitialTank(id, name);
+    const newTank = createInitialTank(id, name, skin);
     this.tankState.tankStates[id] = newTank;
     this.tankSessions.set(id, sessionId);
 

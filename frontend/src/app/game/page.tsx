@@ -7,8 +7,9 @@ function GameContent() {
     const searchParams = useSearchParams();
     
     const playerName = searchParams.get('username') || "Anonymous"; 
+    const skin = searchParams.get('skin') || "scarlet";
 
-    return <Game playerName={playerName} />;
+    return <Game playerName={playerName} skin={skin}/>;
 }
 
 export default function GamePage() {

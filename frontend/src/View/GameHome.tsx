@@ -8,11 +8,11 @@ import { SOCKET_URL } from "../GlobalSetting";
 type StyleMap = { [key: string]: any };
 
 const SKINS = [
-  { id: "red", name: "Đỏ", img: "/skins/red.png" }, 
-  { id: "mint", name: "Bạc Hà", img: "/skins/mint.png" },
-  { id: "ocean", name: "Đại Dương", img: "/skins/ocean.png" },
-  { id: "lemon", name: "Chanh Tươi", img: "/skins/lemon.png" },
-  { id: "dark", name: "Bóng Đêm", img: "/skins/dark.png" },
+  { id: "scarlet", name: "Scarlet", img: "/skins1/scarlet.png" },
+  { id: "desert", name: "Desert", img: "/skins1/desert.png" },
+  { id: "ocean", name: "Ocean", img: "/skins1/ocean.png" },
+  { id: "lemon", name: "Lemon", img: "/skins1/lemon.png" },
+  { id: "violet", name: "Violet", img: "/skins1/violet.png" },
 ];
 
 export default function LoginPage() {
@@ -39,7 +39,7 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, skin: selectedSkin}),
       });
       
 
@@ -127,7 +127,7 @@ export default function LoginPage() {
           </h1>
 
           <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {/* <div style={styles.skinSelector}>
+            <div style={styles.skinSelector}>
               <button onClick={prevSkin} style={styles.arrowBtn}>❮</button>
 
               <div style={styles.skinPreview}>
@@ -147,7 +147,7 @@ export default function LoginPage() {
               </div>
 
               <button onClick={nextSkin} style={styles.arrowBtn}>❯</button>
-            </div> */}
+            </div>
 
             <input
               type="text"

@@ -29,9 +29,12 @@ import { SoundState } from "../Model/Sound";
 
 interface GameProps {
   playerName: string;
+  skin: string;
 }
 
-function Game({ playerName }: GameProps) {
+function Game({ playerName, skin }: GameProps) {
+  // console.log("Game component rendered with playerName:", playerName);
+
   const router = useRouter();
 
   // --- STATE GAME ---
@@ -54,7 +57,7 @@ function Game({ playerName }: GameProps) {
 
   // //  LOAD ASSET ---
   const {imageRef:tankBodyImageRef,isImageLoaded} = useLoadTankBody()
-  const {imageRef:tankGunImageRef,isImageLoaded:isGunImageLoaded} =  useLoadTankGun()
+  const { imageRef: tankGunImageRef, skinGunFramesRef, isImageLoaded: isTankGunImageLoaded } = useLoadTankGun();
   
   const {imageRef:bulletImageRef,isImageLoaded:isBulletImageLoaded} =  useLoadTankBullet()
   const {imageRef:treeImageRef,isImageLoaded:isTreeImageLoaded} =  useLoadTree()
@@ -101,7 +104,7 @@ function Game({ playerName }: GameProps) {
   // Ref để lưu trữ trạng thái hoạt ảnh đạn
   const bulletAnimationState = useRef<BulletAnimationState>({})
   // useEffect để khởi tạo, chạy hoạt ảnh và gắn event listeners
-  const isAllAssetsLoaded = isImageLoaded && isGunImageLoaded  && isBulletImageLoaded && isTreeImageLoaded && isBushImageLoaded && isGroundImageLoaded && isTowerImageLoaded && isItemImageLoaded && isMapIconsLoaded;
+  const isAllAssetsLoaded = isImageLoaded && isTankGunImageLoaded  && isBulletImageLoaded && isTreeImageLoaded && isBushImageLoaded && isGroundImageLoaded && isTowerImageLoaded && isItemImageLoaded && isMapIconsLoaded;
 
   //  XỬ LÝ RESIZE MÀN HÌNH ---
   useEffect(() => {
@@ -201,6 +204,11 @@ function Game({ playerName }: GameProps) {
           socket.emit('registerName', { name: playerName });
       }
 
+      if( skin ) {
+          console.log("Gửi lệnh RegisterSkin:", skin);
+          socket.emit('registerSkin', { skin: skin });
+      }
+
       return () => { 
           socket.off('tankState'); socket.off('bulletState'); 
           socket.off('mapData'); socket.off('mapUpdate'); 
@@ -239,7 +247,8 @@ function Game({ playerName }: GameProps) {
     tankGunAnimationState: RefObject<TankGunAnimationState>,
     keysPressed: RefObject<KeyMap>,
     frames: RefObject<HTMLImageElement[]>,
-  ) => tankGunAnimation(ctx,tankState,tankGunAnimationState,keysPressed,frames, socket?.id, fireSoundRef),[isGunImageLoaded, socket?.id, fireSoundRef])
+    skinGunFrames: RefObject<Record<string, HTMLImageElement[]>>
+  ) => tankGunAnimation(ctx,tankState,tankGunAnimationState,keysPressed,frames, socket?.id, fireSoundRef,skinGunFrames),[isTankGunImageLoaded, socket?.id, fireSoundRef])
 
   // Animation cho đạn
   const tankBulletAnimationCB = useCallback((
@@ -281,7 +290,7 @@ function Game({ playerName }: GameProps) {
     itemImages: RefObject<HTMLImageElement[]>,
   ) => tankHealthAnimation(ctx,tankState, itemImages, socket?.id, itemSoundRef),[isItemImageLoaded])
 
-
+  
  
 
   // --- 3. LOAD ASSETS ---
@@ -353,6 +362,7 @@ function Game({ playerName }: GameProps) {
 
   // --- 5. GAME LOOP (ANIMATE) ---
   const animate = useCallback(() => {
+    
     const canvas = canvasRef.current;
     if (!canvas || !isImageLoaded || !isMapLoaded || !isMapIconsLoaded) { 
         animationFrameId.current = requestAnimationFrame(animate); 
@@ -411,7 +421,7 @@ function Game({ playerName }: GameProps) {
 
     drawMapCB(camX, camY, viewport, dynamicMap, groundImageRef, treeImageRef, towerRef, bushImageRef, mapIcons, ctx, worldScale); // Vẽ map
     tankMovingAnimationCB(ctx, tankStateRef, tankAnimationState, keysPressed, tankBodyImageRef);
-    tankGunAnimationCB(ctx, tankStateRef, tankGunAnimationState, keysPressed, tankGunImageRef);
+    tankGunAnimationCB(ctx, tankStateRef, tankGunAnimationState, keysPressed, tankGunImageRef, skinGunFramesRef);
     tankBulletAnimationCB(ctx, bulletStateRef, bulletAnimationState, bulletImageRef);
     tankHealthAnimationCB(ctx, tankStateRef, itemRef);
     gameSound()
@@ -437,7 +447,7 @@ function Game({ playerName }: GameProps) {
     }
     
     animationFrameId.current = requestAnimationFrame(animate);
-  }, [isImageLoaded, isGunImageLoaded, isBulletImageLoaded, isTreeImageLoaded, isBushImageLoaded, isMapLoaded, isMapIconsLoaded, isItemImageLoaded, drawMapCB, socket, viewport, tankMovingAnimationCB, tankGunAnimationCB, tankBulletAnimationCB, tankUpdatePosistionCB]);
+  }, [isImageLoaded, isTankGunImageLoaded, isBulletImageLoaded, isTreeImageLoaded, isBushImageLoaded, isMapLoaded, isMapIconsLoaded, isItemImageLoaded, drawMapCB, socket, viewport, tankMovingAnimationCB, tankGunAnimationCB, tankBulletAnimationCB, tankUpdatePosistionCB]);
 
   useEffect(() => {
     animationFrameId.current = requestAnimationFrame(animate);
