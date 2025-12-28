@@ -2,7 +2,7 @@ import { RefObject } from "react";
 import { KeyMap } from "../Model/KeyMap";
 import { TankState, TankAnimationState } from "../Model/Tank";
 import { TankGunAnimationState } from "../Model/TankGun";
-import { BUSH_SELF_ALPHA } from "../GlobalSetting";
+import { BUSH_SELF_ALPHA, levelUpScores } from "../GlobalSetting";
 
 
 export const tankHealthAnimation = (
@@ -78,15 +78,28 @@ export const tankHealthAnimation = (
 
         // Vẽ level bên trái thanh máu
         ctx.fillStyle = "yellow";
-        ctx.font = "14px Arial";
+        ctx.font = "12px Arial";
         ctx.textAlign = "right";
-        ctx.fillText(`Lv.${p.level}`, healthBarX - 10, healthBarY + healthBarHeight);
+        ctx.fillText(`Lv: ${p.level}`, healthBarX - 10, healthBarY );
+
+
+        // Vẽ XP dưới level chỉ vẽ nếu là tank của mình
+        if(playerId === viewerId) {
+          const nextLevelXp = levelUpScores[p.level + 1 as keyof typeof levelUpScores] ?? 0;
+          ctx.fillStyle = "cyan";
+          ctx.font = "12px Arial";
+          ctx.textAlign = "right";
+          ctx.fillText(`Xp: ${p.xp} / ${nextLevelXp}`, healthBarX - 10, healthBarY + 14 );
+        }
 
         // Vẽ số máu bên phải thanh máu
         ctx.fillStyle = "white";
         ctx.font = "14px Arial";
         ctx.textAlign = "left";
         ctx.fillText(`${p.health}/${p.maxHealth}`, healthBarX + healthBarWidth + 10, healthBarY + healthBarHeight);
+
+        
+
         
         // Vẽ icon item ở trên phía trên tank
         const itemIconSize = 20;
