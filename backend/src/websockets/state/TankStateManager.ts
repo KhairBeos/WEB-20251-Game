@@ -54,7 +54,7 @@ export class TankStateManager {
       if (!tank) continue;
 
       let inputs = tankInputBuffer[pid];
-      inputs = inputs.filter((i) => Date.now() - i.clientTimestamp <= 100);
+      inputs = inputs.filter((i) => Date.now() - i.clientTimestamp <= 10000);
 
       let newDegree = tank.degree;
 

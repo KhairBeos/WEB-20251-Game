@@ -16,7 +16,7 @@ export class BulletStateManager {
       let inputs = bulletInputBuffer[pid];
       const now = Date.now();
       inputs.sort((a, b) => a.clientTimestamp - b.clientTimestamp);
-      inputs = inputs.filter((i) => now - i.clientTimestamp <= 100);
+      inputs = inputs.filter((i) => now - i.clientTimestamp <= 10000);
 
       // Tạo đạn
       for (const i of inputs) {
