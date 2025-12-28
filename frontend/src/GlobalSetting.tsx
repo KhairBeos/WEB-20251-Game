@@ -38,6 +38,6 @@ export const TOWER_DRAW_SIZE = 80;
 // Debug Mode: hiển thị lưới ô, viền va chạm, bán kính tank, pickup collision
 export const DEBUG_MODE = false;
 
-export const SOCKET_URL = "http://localhost:3001";
-// export const SOCKET_URL = "https://web-20251-game-95jw.onrender.com";
+// export const SOCKET_URL = "http://localhost:3001";
+export const SOCKET_URL = "https://web-20251-game-95jw.onrender.com";
 

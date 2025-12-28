@@ -52,7 +52,7 @@ function Game({ playerName }: GameProps) {
   const cssViewportRef = useRef<{ w: number; h: number }>({ w: CANVAS_WIDTH, h: CANVAS_HEIGHT });
   const [isPortrait, setIsPortrait] = useState(false);
   const viewport = useRef({ w: CANVAS_WIDTH , h: CANVAS_HEIGHT  });
-  console.log("viewport", viewport);
+  // console.log("viewport", viewport);
 
   // //  LOAD ASSET ---
   const {imageRef:tankBodyImageRef,isImageLoaded} = useLoadTankBody()

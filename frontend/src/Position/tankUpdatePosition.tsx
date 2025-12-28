@@ -35,28 +35,30 @@ export const tankUpdatePosistion = (
       isFire: false,
     }
 
+    var ok = false;
     // Handle keyboard input
-    if (keys["a"]) tankInput.rotate = 'left';
-    if (keys["d"]) tankInput.rotate = 'right';
-    if (keys["w"]) tankInput.direction = 'forward';
-    if (keys["s"]) tankInput.direction = 'backward';
-    if( keys["j"] ) tankInput.isFire = true;
+    if (keys["a"]) tankInput.rotate = 'left', ok = true;
+    if (keys["d"]) tankInput.rotate = 'right', ok = true;
+    if (keys["w"]) tankInput.direction = 'forward' , ok = true;
+    if (keys["s"]) tankInput.direction = 'backward', ok = true;
+    if( keys["j"] ) tankInput.isFire = true, ok = true;
     
 
     // Handle touch input (prefer digital for D-pad to mimic keyboard)
     if (touch) {
       if (touch.digitalRotate !== 'none') {
-        tankInput.rotate = touch.digitalRotate;
+        tankInput.rotate = touch.digitalRotate, ok = true;
       }
       if (touch.digitalDirection !== 'none') {
-        tankInput.direction = touch.digitalDirection;
+        tankInput.direction = touch.digitalDirection, ok = true;
       }
 
-      if (touch.isFiring) tankInput.isFire = true;
+      if (touch.isFiring) tankInput.isFire = true, ok = true;
     }
 
     // Gửi trạng thái đầu vào của người chơi lên server
-    if(socket){
+    if(socket && ok) {
+      console.log("Sending tank input:", tankInput);
       socket.emit('tankInput', tankInput);
     }
 

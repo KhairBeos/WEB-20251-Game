@@ -44,18 +44,18 @@ export const useSocket = () => {
       socket.connect(); // Bắt đầu kết nối
 
       socket.on('connect', () => {
-        console.log('Socket client connected successfully!');
+        console.log('🟢 Socket client connected successfully!');
         setIsConnected(true);
       });
 
       socket.on('connect_error', (err) => {
-        console.error('Socket connect error:', err);
+        console.error('🔴 Socket connect error:', err);
         toast?.('⚠️ Không thể kết nối máy chủ. Vui lòng kiểm tra mạng hoặc đăng nhập lại.', 'warning');
         window.location.href = '/';
       });
 
       socket.on('disconnect', (reason) => {
-        console.log('Socket client disconnected.', reason);
+        console.log('🔴 Socket client disconnected.', reason);
         toast?.('⏳ Phiên đã hết hạn hoặc kết nối bị mất. Vui lòng đăng nhập lại.', 'warning');
         window.location.href = '/';
         setIsConnected(false);
