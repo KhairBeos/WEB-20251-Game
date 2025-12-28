@@ -31,6 +31,8 @@ interface GameProps {
   playerName: string;
 }
 
+
+
 function Game({ playerName }: GameProps) {
   const router = useRouter();
 
@@ -42,14 +44,15 @@ function Game({ playerName }: GameProps) {
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
   
   // --- STATE MÀN HÌNH (VIEWPORT) ---
-  const viewport = useRef({ w: 1200, h: 800 });
-
+  
   const { socket, isConnected } = useSocket();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameId = useRef<number>(null);
-  const dprRef = useRef<number>(1);
+  const dprRef = useRef<number>(Math.max(1, Math.min(window.devicePixelRatio || 1, MAX_DPR)));
   const cssViewportRef = useRef<{ w: number; h: number }>({ w: CANVAS_WIDTH, h: CANVAS_HEIGHT });
   const [isPortrait, setIsPortrait] = useState(false);
+  const viewport = useRef({ w: CANVAS_WIDTH , h: CANVAS_HEIGHT  });
+  console.log("viewport", viewport);
 
   // //  LOAD ASSET ---
   const {imageRef:tankBodyImageRef,isImageLoaded} = useLoadTankBody()
@@ -137,7 +140,7 @@ function Game({ playerName }: GameProps) {
         window.addEventListener('resize', checkPortrait);
         window.addEventListener('orientationchange', checkPortrait);
         return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [socket, isAllAssetsLoaded]);
 
   useEffect(() => {
   const handler = (e: KeyboardEvent) => {
@@ -474,9 +477,9 @@ function Game({ playerName }: GameProps) {
 
     <canvas
       ref={canvasRef}
-      width={CANVAS_WIDTH}
-      height={CANVAS_HEIGHT}
-      className="block"
+      width={CANVAS_WIDTH * dprRef.current}
+      height={CANVAS_HEIGHT * dprRef.current}
+      className={`block w-[${CANVAS_WIDTH}px] h-[${CANVAS_HEIGHT}px] `}
     />
     <MobileDPad touchInput={touchInput} />
   </div>

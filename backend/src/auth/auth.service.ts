@@ -16,7 +16,7 @@ export class AuthService {
     sessionStore.set(sessionId, {
       username,
       createdAt: Date.now(),
-      using: false,
+      socketId: undefined,
     });
 
     return {

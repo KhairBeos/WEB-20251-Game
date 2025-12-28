@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "../Hook/useToast";
+import { SOCKET_URL } from "../GlobalSetting";
 
 type StyleMap = { [key: string]: any };
 
@@ -31,14 +32,16 @@ export default function LoginPage() {
     const selectedSkin = SKINS[skinIndex].id;
 
     try {
+      console.log("Attempting to log in with username:", username);
       // Gọi Login API để lây sessionId
-      const res = await fetch('http://localhost:3001/auth/login', {
+      const res = await fetch(`${SOCKET_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ username, password }),
       });
+      
 
       if (!res.ok) {
         let msg = "❌ Đăng nhập thất bại!";

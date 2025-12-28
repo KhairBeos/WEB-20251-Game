@@ -52,13 +52,13 @@ handleGainXp(@MessageBody() data: { playerId: string; xp: number }) {
       return;
     }
 
-    // Nêu session đang được sử dụng, từ chối kết nối
-    if (sessionVal.using) {
-      this.logger.warn(`Session already in use for client: ${client.id}`);
-      client.disconnect();
-      return;
+    if (sessionVal.socketId && sessionVal.socketId !== client.id) {
+        this.server.sockets.sockets
+        .get(sessionVal.socketId)
+        ?.disconnect(true);
     }
-    sessionVal.using = true;
+    sessionVal.socketId = client.id;
+
     sessionStore.set(sessionId, sessionVal);
 
     const username = sessionVal.username;

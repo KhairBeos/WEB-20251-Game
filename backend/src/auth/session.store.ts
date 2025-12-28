@@ -1,7 +1,8 @@
 export interface SessionData {
   username: string;
   createdAt: number;
-  using: boolean;
+  socketId?:string;
+
 }
 
 export const sessionStore = new Map<string, SessionData>();

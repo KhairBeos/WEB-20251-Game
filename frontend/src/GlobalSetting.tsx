@@ -2,8 +2,8 @@ export const PLAYER_SPEED = 5;
 export const TANK_ROTATE_SPEED = 3;
 
 // Kích thước Canvas
-export const CANVAS_WIDTH = typeof window !== 'undefined' ? window.innerWidth : 1920;
-export const CANVAS_HEIGHT = typeof window !== 'undefined' ? window.innerHeight : 1080;
+export const CANVAS_WIDTH = typeof window !== 'undefined' ? window.visualViewport?.width || 1920 : 1920;
+export const CANVAS_HEIGHT = typeof window !== 'undefined' ? window.visualViewport?.height || 1080 : 1080;
 
 export const MAX_CANVAS_WIDTH = 1920;
 export const MAX_CANVAS_HEIGHT = 1080;
@@ -38,6 +38,6 @@ export const TOWER_DRAW_SIZE = 80;
 // Debug Mode: hiển thị lưới ô, viền va chạm, bán kính tank, pickup collision
 export const DEBUG_MODE = false;
 
-// export const SOCKET_URL = "http://localhost:3001";
-export const SOCKET_URL = "http://192.168.5.94:3001";
+export const SOCKET_URL = "http://localhost:3001";
+// export const SOCKET_URL = "https://web-20251-game-95jw.onrender.com";
 

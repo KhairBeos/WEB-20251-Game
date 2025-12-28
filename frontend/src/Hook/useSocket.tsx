@@ -30,6 +30,7 @@ export const useSocket = () => {
         return;
       }
       const socket = io(SOCKET_URL, {
+        transports: ["websocket"],
         // Gửi SessionID lên server
         auth: {
           sessionId: sessionId,
