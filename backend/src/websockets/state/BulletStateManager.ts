@@ -1,6 +1,4 @@
-import { BulletState, BulletInputBuffer, Bullet } from '../model/Bullet';
-import { MapCell } from '../model/MapData';
-import { bulletWallCollision } from '../collision/BulletWallCollision';
+import { Bullet, BulletInputBuffer, BulletState } from '../model/Bullet';
 import { TankState } from '../model/Tank';
 
 
@@ -22,7 +20,7 @@ export class BulletStateManager {
 
       // Tạo đạn
       for (const i of inputs) {
-        console.log(`Creating bullet for player ${pid} with input:`, i);
+        // console.log(`Creating bullet for player ${pid} with input:`, i);
         var numBullets = Math.floor(tank.level / 5) + 1; // Mỗi 5 level thêm 1 đạn
         numBullets = Math.min(numBullets, 8); // Giới hạn tối đa 8 đạn
         

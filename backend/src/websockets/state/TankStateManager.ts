@@ -31,7 +31,7 @@ export class TankStateManager {
         // Tăng thuộc tính khi lên cấp
         tank.maxHealth += 10; // max máu thêm = 50 * 10 = 500 máu
         tank.damage += 1; // damage thêm = 1 * 50 = 50 damage
-        tank.speed += 0.1; // speed thêm = 0.2 * 50 = 10 speed
+        tank.speed += 0.1; // speed thêm = 0.1 * 50 = 10 speed
         console.log(`Tank ${pid} leveled up to level ${tank.level}!`);
         console.log(`New stats - Health: ${tank.maxHealth}, Damage: ${tank.damage}, Speed: ${tank.speed}`);
       }

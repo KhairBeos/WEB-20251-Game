@@ -66,7 +66,7 @@ export class GameService implements OnModuleInit {
   }
 
   onModuleInit() {
-    this.currentMap = JSON.parse(JSON.stringify(generateMap()));
+    this.currentMap = generateMap();
     // init services
     this.mapService = new MapService(this.currentMap.map);
     this.tankManager = new TankStateManager();
@@ -75,11 +75,6 @@ export class GameService implements OnModuleInit {
     this.towerService = new TowerService(this.currentMap.map, this.server);
     this.bushService = new BushService(this.currentMap.map, this.server);
     setInterval(() => this.gameLoop(), this.GAME_TICK_RATE);
-
-    // Spawn initial pickups (3 items at start)
-    for (let i = 0; i < 3; i++) {
-      this.pickupService.spawnRandomPickup();
-    }
 
     // Định kỳ: di chuyển lại một số bụi sang vị trí ngẫu nhiên mỗi 60-120s
     setInterval(() => {
@@ -93,14 +88,14 @@ export class GameService implements OnModuleInit {
       }
     }, 120000); // kiểm tra mỗi 2 phút
 
-    // Spawn new pickups periodically (every 10 seconds) để duy trì tối đa 50 item
+    // Spawn new pickups periodically (every 30 seconds) để duy trì tối đa 50 item
     setInterval(() => {
       try {
         this.pickupService.spawnRandomPickup();
       } catch {
         // swallow errors to keep timer alive
       }
-    }, 10000); // 10s
+    }, 30000); // 30s
   }
 
   addXp(playerId: string, xp: number) {
@@ -181,6 +176,7 @@ export class GameService implements OnModuleInit {
         this.bulletState.bulletStates,
         this.tankState,
         this.server,
+        this.towerService.onTowerDestroyed.bind(this.towerService)
       );
 
       bulletVSTankCollision(
