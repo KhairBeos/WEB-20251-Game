@@ -43,6 +43,7 @@ function Game({ playerName, skin }: GameProps) {
   const bulletStateRef = useRef<BulletState>({ serverTimestamp: 0, bulletStates: {} });
   const dynamicMap= useRef<MapCell[][]>([]);
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
+  const [ping, setPing] = useState<number>(0);
   
   // --- STATE MÀN HÌNH (VIEWPORT) ---
   
@@ -56,7 +57,7 @@ function Game({ playerName, skin }: GameProps) {
   // console.log("viewport", viewport);
 
   // //  LOAD ASSET ---
-  const {imageRef:tankBodyImageRef,isImageLoaded} = useLoadTankBody()
+  const {imageRef:tankBodyImageRef,skinGunFramesRef: skinBodyFramesRef,isImageLoaded} = useLoadTankBody()
   const { imageRef: tankGunImageRef, skinGunFramesRef, isImageLoaded: isTankGunImageLoaded } = useLoadTankGun();
   
   const {imageRef:bulletImageRef,isImageLoaded:isBulletImageLoaded} =  useLoadTankBullet()
@@ -83,6 +84,7 @@ function Game({ playerName, skin }: GameProps) {
 
   // --- TẠO CÁC REF LƯU TRẠNG THÁI ---
   // Ref để theo dõi trạng thái tank từ server
+  
   
   const mapAssetsRef = useRef<any>({});
   const staticCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -218,6 +220,31 @@ function Game({ playerName, skin }: GameProps) {
   }, [socket, isConnected, playerName, router]);
 
 
+
+  // Ping measurement
+  function measurePing(socket:any) {
+  const start = performance.now();
+  socket.emit("ping", start);
+
+  socket.once("pong", (serverTime:any) => {
+    const end = performance.now();
+    const ping = end - start;
+    console.log("Ping:", Math.round(ping), "ms");
+    setPing(Math.round(ping));
+  });
+}
+
+  useEffect(() => { 
+    if (socket) {
+      const interval = setInterval(() => {
+        measurePing(socket);
+      }, 5000); // Ping every 5 seconds
+      return () => clearInterval(interval);
+    }
+  }, [socket, isAllAssetsLoaded]);
+    
+
+  // Leadersboard update every second
   useEffect(() => {
       const interval = setInterval(() => {
           if (tankStateRef.current && tankStateRef.current.tankStates) {
@@ -238,7 +265,8 @@ function Game({ playerName, skin }: GameProps) {
     tankAnimationState: RefObject<TankAnimationState>,
     keysPressed: RefObject<KeyMap>,
     frames: RefObject<HTMLImageElement[]>,
-  ) => tankMovingAnimation(ctx,tankState,tankAnimationState,keysPressed,frames, socket?.id, hitSoundRef),[isImageLoaded, socket?.id,hitSoundRef])
+    skinGunFrames?: RefObject<Record<string, HTMLImageElement[]>>,
+  ) => tankMovingAnimation(ctx,tankState,tankAnimationState,keysPressed,frames, socket?.id, hitSoundRef,skinGunFrames ),[isImageLoaded, socket?.id,hitSoundRef])
 
   // Animation cho tank gun
   const tankGunAnimationCB = useCallback((
@@ -283,15 +311,11 @@ function Game({ playerName, skin }: GameProps) {
     drawMap(camX,camY,dynamicMap,viewPort,groundImg,treeImg,towerImg,bushImg,icons,ctx, worldScale);
   },[isGroundImageLoaded,isTreeImageLoaded,isTowerImageLoaded,isBushImageLoaded,isMapIconsLoaded, socket?.id])
 
-
   const tankHealthAnimationCB = useCallback((
     ctx: CanvasRenderingContext2D,
     tankState: RefObject<TankState>,
     itemImages: RefObject<HTMLImageElement[]>,
   ) => tankHealthAnimation(ctx,tankState, itemImages, socket?.id, itemSoundRef),[isItemImageLoaded])
-
-  
- 
 
   // --- 3. LOAD ASSETS ---
   const [isMapLoaded, setIsMapLoaded] = useState(false);
@@ -354,8 +378,7 @@ function Game({ playerName, skin }: GameProps) {
         backgroundMusicRef.current.play();
       }
     }
-}
-
+  }
 
   const lastSendRef = useRef(0);
   const SEND_INTERVAL = 10; // 20Hz
@@ -420,7 +443,7 @@ function Game({ playerName, skin }: GameProps) {
     ctx.translate(-camX , -camY ); // Dịch chuyển thế giới
 
     drawMapCB(camX, camY, viewport, dynamicMap, groundImageRef, treeImageRef, towerRef, bushImageRef, mapIcons, ctx, worldScale); // Vẽ map
-    tankMovingAnimationCB(ctx, tankStateRef, tankAnimationState, keysPressed, tankBodyImageRef);
+    tankMovingAnimationCB(ctx, tankStateRef, tankAnimationState, keysPressed, tankBodyImageRef, skinBodyFramesRef);
     tankGunAnimationCB(ctx, tankStateRef, tankGunAnimationState, keysPressed, tankGunImageRef, skinGunFramesRef);
     tankBulletAnimationCB(ctx, bulletStateRef, bulletAnimationState, bulletImageRef);
     tankHealthAnimationCB(ctx, tankStateRef, itemRef);
@@ -468,10 +491,18 @@ function Game({ playerName, skin }: GameProps) {
   // Canvas full màn hình, không viền thừa
   return (
   <div className="w-full h-screen bg-gray-900 overflow-hidden relative">
+
+    {/* Draw score board */}
     <Scoreboard 
     players={leaderboardData} 
         myId={socket?.id}
     />
+
+    {/* Draw Ping in left score board */}
+    <div className="absolute top-4 left-4 z-40 bg-black/50 text-white px-3 py-1 rounded-md text-sm font-mono">
+        <span>Ping: </span>
+        <span id="ping-value">{ping} ms</span>
+    </div>
 
     {isGameOver && (
         <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-500">

@@ -81,4 +81,12 @@ handleGainXp(@MessageBody() data: { playerId: string; xp: number }) {
     // console.log("🔥 TANK INPUT RECEIVED", client.id, tankInput);
     this.gameService.handleTankInput(client.id, tankInput);
   }
+
+  @SubscribeMessage("ping")
+handlePing(@MessageBody() clientTime: number) {
+  return {
+    event: "pong",
+    data: Date.now(),
+  };
+}
 }

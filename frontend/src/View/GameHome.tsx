@@ -44,17 +44,10 @@ export default function LoginPage() {
       
 
       if (!res.ok) {
-        let msg = "❌ Đăng nhập thất bại!";
-        if (res.status === 401) msg = "❌ Sai tài khoản hoặc mật khẩu.";
-        else if (res.status === 429) msg = "⚠️ Thử lại sau, bạn đang đăng nhập quá nhanh.";
-        else {
-          try {
-            const err = await res.json();
-            if (err?.message) msg = `❌ ${err.message}`;
-          } catch {
-            // keep default
-          }
-        }
+        
+        let msg = `❌ Đăng nhập thất bại với mã lỗi ${res.status}`;
+        const err = await res.json();
+        if (err?.message) msg = `❌ ${err.message}`;
         toast?.(msg, "error");
         return;
       }
@@ -67,6 +60,8 @@ export default function LoginPage() {
       }
       // Lưu sessionId vào localStorage
       localStorage.setItem('tank_session_id', sessionId);
+
+      toast?.("✅ Đăng nhập thành công! Hãy sẵn sàng chiến đấu!", "success");
 
       // chuyển trang
       router.push(

@@ -11,6 +11,7 @@ export const tankMovingAnimation = (
   frames: RefObject<HTMLImageElement[]>,
   viewerId?: string,
   hitSoundRef?: RefObject<HTMLAudioElement | null>,
+  skinGunFrames?: RefObject<Record<string, HTMLImageElement[]>>,
 ) => {
   // --- HÀM CẬP NHẬT HOẠT ẢNH ---
   const updateAnimation = () => {
@@ -78,7 +79,13 @@ export const tankMovingAnimation = (
       ctx.rotate(angleInRadians);
 
       // Lấy đối tượng Image tương ứng với khung hình hiện tại
-      const img = frames.current[animState.moving.frameIndex];
+      const skinId = p.skin || "scarlet";
+      const gunFramesForSkin = skinGunFrames?.current?.[skinId];
+      const gunFrames = gunFramesForSkin && gunFramesForSkin.length > 0
+        ? gunFramesForSkin
+        : frames.current;
+
+      const img = gunFrames[animState.moving.frameIndex];
       if (!img) {
         ctx.restore();
         return;

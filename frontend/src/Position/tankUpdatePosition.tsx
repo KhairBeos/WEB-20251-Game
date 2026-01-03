@@ -58,7 +58,7 @@ export const tankUpdatePosistion = (
     
     // Gửi trạng thái đầu vào của người chơi lên server
     if(socket && ok) {
-      console.log("Sending tank input:", tankInput);
+      // console.log("Sending tank input:", tankInput);
       socket.emit('tankInput', tankInput);
     }
 
