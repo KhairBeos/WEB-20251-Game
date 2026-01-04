@@ -108,7 +108,7 @@ export class TankStateManager {
               width: 32,
               height: 36,
               degree: tank.degree,
-              speed: newSpeed * 2,
+              speed: newSpeed * 1.5,
               damage: newDamage,
               ownerId: pid,
             };

@@ -93,6 +93,11 @@ export class TowerService {
         }
       }
     }
+
+    // Ngẫu nhiên thời gian (10-30s) để respawn tower
+    const timeToSpawn = 10000 + Math.random() * 20000;
+    console.log(`Tower will respawn in ${timeToSpawn / 1000}s`);
+
     // Hẹn giờ respawn tower về full (4)
     setTimeout(() => {
       const newPos = this.pickRandomLocation();
