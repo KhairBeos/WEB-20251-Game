@@ -21,7 +21,7 @@ export class BulletStateManager {
       // Tạo đạn
       for (const i of inputs) {
         // console.log(`Creating bullet for player ${pid} with input:`, i);
-        var numBullets = Math.floor(tank.level / 5) + 1; // Mỗi 5 level thêm 1 đạn
+        var numBullets = Math.floor(tank.level / 7) + 1; // Mỗi 7 level thêm 1 đạn
         numBullets = Math.min(numBullets, 8); // Giới hạn tối đa 8 đạn
         
         for (let b = 0; b < numBullets; b++) {

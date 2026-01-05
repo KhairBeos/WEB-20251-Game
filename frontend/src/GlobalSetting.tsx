@@ -8,8 +8,8 @@ export const CANVAS_HEIGHT = typeof window !== 'undefined' ? window.visualViewpo
 export const MAX_CANVAS_WIDTH = 1920;
 export const MAX_CANVAS_HEIGHT = 1080;
 
-export const VISIBLE_COLS = Math.floor(30*1.2); // how many map columns to aim to display
-export const VISIBLE_ROWS = Math.floor(18*1.2); // how many map rows to aim to display
+export const VISIBLE_COLS = Math.floor(30*1.1); // how many map columns to aim to display
+export const VISIBLE_ROWS = Math.floor(18*1.1); // how many map rows to aim to display
 
 export const ANIMATION_SPEED = 10; 
 export const COOLDOWN_MS = 1000;
@@ -40,8 +40,8 @@ export const DEBUG_MODE = false;
 
 // export const SOCKET_URL = "http://localhost:3001";
 // export const SOCKET_URL = "https://web-20251-game-95jw.onrender.com";
-export const SOCKET_URL = "http://47.128.255.70";
-
+// export const SOCKET_URL = "http://47.128.255.70";
+export const SOCKET_URL = "https://ankhang277.id.vn";
 
 export const levelUpScores = {
   1: 0,

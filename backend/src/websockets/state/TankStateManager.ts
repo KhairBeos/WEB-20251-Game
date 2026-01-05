@@ -28,10 +28,19 @@ export class TankStateManager {
       if (tank.xp >= levelUpScores[tank.level+1] && tank.level < 50) {
         tank.xp -= levelUpScores[tank.level+1];
         tank.level += 1;
-        // Tăng thuộc tính khi lên cấp
-        tank.maxHealth += 10; // max máu thêm = 50 * 10 = 500 máu
-        tank.damage += 1; // damage thêm = 1 * 50 = 50 damage
-        tank.speed += 0.1; // speed thêm = 0.1 * 50 = 10 speed
+        // Tăng thuộc tính khi lên cấp (random giữa 3 thuộc tính)
+        const attrIncrease = Math.floor(Math.random() * 3);
+        if (attrIncrease === 0) {
+          tank.maxHealth += 10;
+        } else if (attrIncrease === 1) {
+          tank.damage += 1;
+        }
+        else if (attrIncrease === 2) {
+          tank.speed += 0.1;
+        }
+        // tank.maxHealth += 10; // max máu thêm = 50 * 10 = 500 máu
+        // tank.damage += 1; // damage thêm = 1 * 50 = 50 damage
+        // tank.speed += 0.1; // speed thêm = 0.1 * 50 = 10 speed
         console.log(`Tank ${pid} leveled up to level ${tank.level}!`);
         console.log(`New stats - Health: ${tank.maxHealth}, Damage: ${tank.damage}, Speed: ${tank.speed}`);
       }
@@ -108,7 +117,7 @@ export class TankStateManager {
               width: 32,
               height: 36,
               degree: tank.degree,
-              speed: newSpeed * 1.5,
+              speed: newSpeed,
               damage: newDamage,
               ownerId: pid,
             };

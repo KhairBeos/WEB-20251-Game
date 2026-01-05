@@ -132,9 +132,11 @@ export const tankHealthAnimation = (
         }
 
         // Vẽ ring thời gian còn lại của item
+        console.log(`Player ${playerId} has item ${p.itemKind} with expire at ${p.itemExpire}`);
         if(p.itemKind !== 'none') {
           const nowTs = Date.now();
-          const timeLeft = p.itemExpire - nowTs;
+          const timeLeft = p.itemExpire - nowTs - 2000;
+          console.log(`Time left for item ${p.itemKind} of player ${playerId}: ${timeLeft}ms`);
           let totalDuration = 0;
           if(p.itemKind === 'shield') totalDuration = 10000;
           else if(p.itemKind === 'speed') totalDuration = 10000;
